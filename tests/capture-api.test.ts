@@ -17,8 +17,16 @@ test("extracts OpenAI instructions and developer input", () => {
 });
 
 test("extracts Anthropic text blocks", () => {
-  expect(extractAnthropic({ system: [{ type: "text", text: "x-anthropic-billing-header: cch=volatile;\nfirst" }, { type: "text", text: "second" }] })).toEqual([
-    ["system", "first\nsecond"],
+  const system = [
+    "x-anthropic-billing-header: cc_version=2.1.210.814; cc_entrypoint=sdk-cli; cch=volatile;",
+    "first",
+    " - OS Version: Linux 6.17.0-1020-azure",
+  ].join("\n");
+  expect(extractAnthropic({ system: [{ type: "text", text: system }, { type: "text", text: "second" }] })).toEqual([
+    [
+      "system",
+      "x-anthropic-billing-header: cc_version=2.1.210.814; cc_entrypoint=sdk-cli;\nfirst\n - OS Version: Linux\nsecond",
+    ],
   ]);
 });
 

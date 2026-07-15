@@ -46,7 +46,15 @@ export function extractOpenAI(payload: JsonObject): Section[] {
 }
 
 export function extractAnthropic(payload: JsonObject): Section[] {
-  const system = textFrom(payload.system).replace(/^x-anthropic-billing-header:.*(?:\r?\n)?/, "");
+  const system = textFrom(payload.system)
+    .replace(/^x-anthropic-billing-header:\s*(.*)$/m, (_line, value: string) => {
+      const fields = value
+        .split(";")
+        .map((field) => field.trim())
+        .filter((field) => field && !field.startsWith("cch="));
+      return `x-anthropic-billing-header: ${fields.join("; ")};`;
+    })
+    .replace(/^ - OS Version: Linux\s+.+$/m, " - OS Version: Linux");
   return uniqueSections([["system", system]]);
 }
 
