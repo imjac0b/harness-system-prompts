@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { extractAnthropic, extractChatCompletions, extractCline, extractCodexDesktop, extractGemini, extractHermes, extractKimi, extractOpenAI, snapshotForModel, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
+import { extractAnthropic, extractChatCompletions, extractCline, extractCodexDesktop, extractGemini, extractHermes, extractKimi, extractOpenAI, extractOpenClaw, snapshotForModel, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
 
 test("extracts OpenAI instructions and developer input", () => {
   expect(
@@ -68,6 +68,14 @@ test("normalizes Hermes' conversation start date", () => {
     { role: "system", content: "Conversation started: Wednesday, July 15, 2026\nModel: capture-hermes" },
   ] })).toEqual([
     ["system 1", "Conversation started: <CURRENT_DATE>\nModel: capture-hermes"],
+  ]);
+});
+
+test("normalizes OpenClaw's session ID", () => {
+  expect(extractOpenClaw({ messages: [
+    { role: "system", content: "Runtime: agent=main | sessionId=38900de6-1d6f-4835-b805-fe2da463f9d1 | model=capture-openclaw" },
+  ] })).toEqual([
+    ["system 1", "Runtime: agent=main | sessionId=<SESSION_ID> | model=capture-openclaw"],
   ]);
 });
 

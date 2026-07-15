@@ -101,6 +101,13 @@ export function extractHermes(payload: JsonObject): Section[] {
   ]);
 }
 
+export function extractOpenClaw(payload: JsonObject): Section[] {
+  return extractChatCompletions(payload).map(([label, content]) => [
+    label,
+    content.replace(/sessionId=[^ |]+/g, "sessionId=<SESSION_ID>"),
+  ]);
+}
+
 export function extractGemini(payload: JsonObject): Section[] {
   return uniqueSections([
     ["system instruction", textFrom(payload.systemInstruction ?? payload.system_instruction)],
@@ -284,6 +291,8 @@ export async function handleRequest(request: Request): Promise<Response> {
         ? extractCline(payload)
         : filename === "hermes-agent.md"
           ? extractHermes(payload)
+          : filename === "openclaw.md"
+            ? extractOpenClaw(payload)
           : extractChatCompletions(payload);
     await writeSnapshot(filename, sections);
     return chatCompletionsResponse(model, payload.stream === true);
