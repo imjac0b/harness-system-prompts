@@ -54,7 +54,7 @@ You have been invoked in the following environment:
  - Is a git repository: true
  - Platform: linux
  - Shell: bash
- - OS Version: Linux 6.17.0-1020-azure
+ - OS Version: Linux 6.17.0-1018-azure
  - You are powered by the model capture-model.
  - The most recent Claude models are the Claude 5 family, Opus 4.8, and Haiku 4.5. Model IDs — Fable 5: 'claude-fable-5', Opus 4.8: 'claude-opus-4-8', Sonnet 5: 'claude-sonnet-5', Haiku 4.5: 'claude-haiku-4-5-20251001'. When building AI applications, default to the latest and most capable Claude models.
  - Claude Code is available as a CLI in the terminal, desktop app (Mac/Windows), web app (claude.ai/code), and IDE extensions (VS Code, JetBrains).
@@ -72,7 +72,9 @@ Current branch: main
 Main branch (you will usually use this for PRs): main
 
 Status:
-?? prompts/
+(clean)
 
 Recent commits:
+4d92016 Update checkout action runtime
+1818cdf Update harness system prompts
 224d62b Add Bun harness prompt capture workflow
