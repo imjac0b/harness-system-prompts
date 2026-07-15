@@ -4,17 +4,24 @@ type HarnessMetadata = {
 };
 
 type Metadata = {
+  agent_zero: HarnessMetadata;
+  aider: HarnessMetadata;
   claude_code: HarnessMetadata;
   cline_cli: HarnessMetadata;
   cline_sdk: HarnessMetadata;
   codex: HarnessMetadata;
   codex_desktop: HarnessMetadata;
+  crush: HarnessMetadata;
   gemini_cli: HarnessMetadata;
   grok_code_cli: HarnessMetadata;
   hermes_agent: HarnessMetadata;
   kilo_code_cli: HarnessMetadata;
   kimi_cli: HarnessMetadata;
+  mimo_code: HarnessMetadata;
+  omp: HarnessMetadata;
   openclaw: HarnessMetadata;
+  openhands: HarnessMetadata;
+  opensquilla: HarnessMetadata;
   opencode: HarnessMetadata;
   pi: HarnessMetadata;
   qwen_code: HarnessMetadata;
@@ -43,6 +50,13 @@ export function renderResults(metadata: Metadata): string {
     ["Qwen Code", metadata.qwen_code, "prompts/qwen-code.md"],
     ["Grok Code CLI", metadata.grok_code_cli, "prompts/grok-code-cli.md"],
     ["Pi", metadata.pi, "prompts/pi.md"],
+    ["oh-my-pi", metadata.omp, "prompts/omp.md"],
+    ["OpenHands CLI", metadata.openhands, "prompts/openhands.md"],
+    ["OpenSquilla", metadata.opensquilla, "prompts/opensquilla.md"],
+    ["Agent Zero", metadata.agent_zero, "prompts/agent-zero.md"],
+    ["MiMo Code", metadata.mimo_code, "prompts/mimo-code.md"],
+    ["Crush", metadata.crush, "prompts/crush.md"],
+    ["Aider", metadata.aider, "prompts/aider.md"],
   ] as const;
 
   return [

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { extractAnthropic, extractChatCompletions, extractCline, extractCodexDesktop, extractGemini, extractHermes, extractKimi, extractOpenAI, extractOpenClaw, snapshotForModel, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
+import { extractAnthropic, extractChatCompletions, extractCline, extractCodexDesktop, extractGemini, extractHermes, extractKimi, extractOpenAI, extractOpenClaw, extractOpenHands, extractRunnerEnvironment, snapshotForModel, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
 
 test("extracts OpenAI instructions and developer input", () => {
   expect(
@@ -79,6 +79,22 @@ test("normalizes OpenClaw's runner identity", () => {
   ]);
 });
 
+test("normalizes OpenHands runtime context", () => {
+  expect(extractOpenHands({ messages: [
+    { role: "system", content: "<CURRENT_DATETIME>2026-07-16T03:42:11Z</CURRENT_DATETIME>\nYour current working directory is: /tmp/work\nUser operating system: Linux (kernel: 6.17.0-1020-azure)" },
+  ] })).toEqual([
+    ["system 1", "<CURRENT_DATETIME><CURRENT_DATE_TIME></CURRENT_DATETIME>\nYour current working directory is: <WORKSPACE>\nUser operating system: Linux (kernel: <KERNEL_VERSION>)"],
+  ]);
+});
+
+test("normalizes runner paths and dates", () => {
+  expect(extractRunnerEnvironment({ messages: [
+    { role: "system", content: "<env>\n  Working directory: /tmp/work\n  Workspace root folder: /tmp/work\n  Today's date: Thu Jul 16 2026\n</env>" },
+  ] })).toEqual([
+    ["system 1", "<env>\n  Working directory: <WORKSPACE>\n  Workspace root folder: <WORKSPACE>\n  Today's date: <CURRENT_DATE>\n</env>"],
+  ]);
+});
+
 test("extracts Gemini system instructions", () => {
   expect(extractGemini({ systemInstruction: { parts: [{ text: "base prompt" }] } })).toEqual([
     ["system instruction", "base prompt"],
@@ -91,10 +107,17 @@ test("routes Codex Desktop requests by originator", () => {
 });
 
 test("routes added harness models to distinct snapshots", () => {
+  expect(snapshotForModel("capture-agent-zero", "fallback.md")).toBe("agent-zero.md");
+  expect(snapshotForModel("capture-aider", "fallback.md")).toBe("aider.md");
   expect(snapshotForModel("capture-kilo-code", "fallback.md")).toBe("kilo-code-cli.md");
   expect(snapshotForModel("capture-cline-cli", "fallback.md")).toBe("cline-cli.md");
   expect(snapshotForModel("capture-cline-sdk", "fallback.md")).toBe("cline-sdk.md");
+  expect(snapshotForModel("capture-crush", "fallback.md")).toBe("crush.md");
+  expect(snapshotForModel("capture-mimo-code", "fallback.md")).toBe("mimo-code.md");
+  expect(snapshotForModel("capture-omp", "fallback.md")).toBe("omp.md");
   expect(snapshotForModel("capture-openclaw", "fallback.md")).toBe("openclaw.md");
+  expect(snapshotForModel("capture-openhands", "fallback.md")).toBe("openhands.md");
+  expect(snapshotForModel("capture-opensquilla", "fallback.md")).toBe("opensquilla.md");
   expect(snapshotForModel("capture-hermes", "fallback.md")).toBe("hermes-agent.md");
 });
 

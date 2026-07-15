@@ -113,6 +113,29 @@ export function extractOpenClaw(payload: JsonObject): Section[] {
   ]);
 }
 
+export function extractOpenHands(payload: JsonObject): Section[] {
+  return extractChatCompletions(payload).map(([label, content]) => [
+    label,
+    content
+      .replace(
+        /<CURRENT_DATETIME>[\s\S]*?<\/CURRENT_DATETIME>/g,
+        "<CURRENT_DATETIME><CURRENT_DATE_TIME></CURRENT_DATETIME>",
+      )
+      .replace(/^(Your current working directory is:) .+$/gm, "$1 <WORKSPACE>")
+      .replace(/^(User operating system:) Linux \(kernel: [^)]+\)$/gm, "$1 Linux (kernel: <KERNEL_VERSION>)"),
+  ]);
+}
+
+export function extractRunnerEnvironment(payload: JsonObject): Section[] {
+  return extractChatCompletions(payload).map(([label, content]) => [
+    label,
+    content
+      .replace(/^(\s*Working directory:)\s*.+$/gm, "$1 <WORKSPACE>")
+      .replace(/^(\s*Workspace root folder:)\s*.+$/gm, "$1 <WORKSPACE>")
+      .replace(/^(\s*Today's date:)\s*.+$/gm, "$1 <CURRENT_DATE>"),
+  ]);
+}
+
 export function extractGemini(payload: JsonObject): Section[] {
   return uniqueSections([
     ["system instruction", textFrom(payload.systemInstruction ?? payload.system_instruction)],
@@ -120,14 +143,21 @@ export function extractGemini(payload: JsonObject): Section[] {
 }
 
 const snapshotsByModel: Record<string, string> = {
+  "capture-agent-zero": "agent-zero.md",
+  "capture-aider": "aider.md",
   "capture-cline-cli": "cline-cli.md",
   "capture-cline-sdk": "cline-sdk.md",
+  "capture-crush": "crush.md",
   "capture-gemini": "gemini-cli.md",
   "capture-grok": "grok-code-cli.md",
   "capture-hermes": "hermes-agent.md",
   "capture-kimi": "kimi-cli.md",
   "capture-kilo-code": "kilo-code-cli.md",
+  "capture-mimo-code": "mimo-code.md",
+  "capture-omp": "omp.md",
   "capture-openclaw": "openclaw.md",
+  "capture-openhands": "openhands.md",
+  "capture-opensquilla": "opensquilla.md",
   "capture-opencode": "opencode.md",
   "capture-pi": "pi.md",
   "capture-qwen": "qwen-code.md",
@@ -292,13 +322,17 @@ export async function handleRequest(request: Request): Promise<Response> {
     const filename = snapshotForModel(model, "openai-compatible.md");
     const sections = filename === "kimi-cli.md"
       ? extractKimi(payload)
-      : filename === "cline-cli.md" || filename === "cline-sdk.md"
-        ? extractCline(payload)
-        : filename === "hermes-agent.md"
-          ? extractHermes(payload)
-          : filename === "openclaw.md"
-            ? extractOpenClaw(payload)
-          : extractChatCompletions(payload);
+      : filename === "openhands.md"
+        ? extractOpenHands(payload)
+        : filename === "crush.md" || filename === "mimo-code.md" || filename === "opensquilla.md"
+          ? extractRunnerEnvironment(payload)
+          : filename === "cline-cli.md" || filename === "cline-sdk.md"
+            ? extractCline(payload)
+            : filename === "hermes-agent.md"
+              ? extractHermes(payload)
+              : filename === "openclaw.md"
+                ? extractOpenClaw(payload)
+                : extractChatCompletions(payload);
     await writeSnapshot(filename, sections);
     return chatCompletionsResponse(model, payload.stream === true);
   }

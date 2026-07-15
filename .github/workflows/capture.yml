@@ -16,18 +16,25 @@ concurrency:
 jobs:
   capture-cli:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     outputs:
+      agent_zero_version: ${{ steps.versions.outputs.agent_zero }}
+      aider_version: ${{ steps.versions.outputs.aider }}
       claude_code_version: ${{ steps.versions.outputs.claude_code }}
       cline_cli_version: ${{ steps.versions.outputs.cline_cli }}
       cline_sdk_version: ${{ steps.versions.outputs.cline_sdk }}
       codex_version: ${{ steps.versions.outputs.codex }}
+      crush_version: ${{ steps.versions.outputs.crush }}
       gemini_cli_version: ${{ steps.versions.outputs.gemini_cli }}
       grok_code_cli_version: ${{ steps.versions.outputs.grok_code_cli }}
       hermes_agent_version: ${{ steps.versions.outputs.hermes_agent }}
       kilo_code_cli_version: ${{ steps.versions.outputs.kilo_code_cli }}
       kimi_cli_version: ${{ steps.versions.outputs.kimi_cli }}
+      mimo_code_version: ${{ steps.versions.outputs.mimo_code }}
+      omp_version: ${{ steps.versions.outputs.omp }}
       opencode_version: ${{ steps.versions.outputs.opencode }}
+      openhands_version: ${{ steps.versions.outputs.openhands }}
+      opensquilla_version: ${{ steps.versions.outputs.opensquilla }}
       openclaw_version: ${{ steps.versions.outputs.openclaw }}
       pi_version: ${{ steps.versions.outputs.pi }}
       qwen_code_version: ${{ steps.versions.outputs.qwen_code }}
@@ -59,11 +66,27 @@ jobs:
             @openai/codex@latest \
             @qwen-code/qwen-code@latest \
             @xai-official/grok@latest \
+            @oh-my-pi/pi-coding-agent@latest \
             cline@latest \
             openclaw@latest \
             opencode-ai@latest
+          npm install --global \
+            @charmland/crush@latest \
+            @mimo-ai/cli@latest
           uv tool install --python 3.13 kimi-cli
           uv tool install --python 3.13 hermes-agent
+          uv tool install --python 3.12 openhands
+          uv tool install --python 3.12 \
+            "opensquilla @ https://github.com/opensquilla/opensquilla/releases/download/v0.5.0rc4/opensquilla-0.5.0rc4-py3-none-any.whl"
+          uv tool install --force --python 3.12 --with pip aider-chat@latest
+
+          git clone --branch v2.4 --depth 1 \
+            https://github.com/agent0ai/agent-zero.git \
+            "$RUNNER_TEMP/agent-zero"
+          uv venv --python 3.12 "$RUNNER_TEMP/agent-zero-venv"
+          uv pip install \
+            --python "$RUNNER_TEMP/agent-zero-venv/bin/python" \
+            -r "$RUNNER_TEMP/agent-zero/requirements.txt"
           mkdir -p "$RUNNER_TEMP/cline-sdk-runner"
           cp scripts/capture-cline-sdk.ts "$RUNNER_TEMP/cline-sdk-runner/"
           cd "$RUNNER_TEMP/cline-sdk-runner"
@@ -87,6 +110,199 @@ jobs:
           git -C "$RUNNER_TEMP/harness-sandbox" init --initial-branch=main
           git -C "$RUNNER_TEMP/harness-sandbox" config user.name "Harness Capture"
           git -C "$RUNNER_TEMP/harness-sandbox" config user.email "harness-capture@localhost"
+
+      - name: Capture Agent Zero instructions
+        env:
+          A0_SET_agent_profile: agent0
+          A0_SET_mcp_servers: '{"mcpServers":{}}'
+          A0_SET_update_check_enabled: "false"
+          A0_SET_workdir_path: ${{ runner.temp }}/harness-sandbox
+          A0_SET_workdir_show: "false"
+          AGENT_ZERO_OUTPUT: ${{ github.workspace }}/prompts/agent-zero.md
+          AGENT_ZERO_SOURCE: ${{ runner.temp }}/agent-zero
+          HOME: ${{ runner.temp }}/agent-zero-home
+        run: |
+          mkdir -p "$HOME" "$AGENT_ZERO_SOURCE/usr/plugins/_model_config"
+          node -e 'const fs=require("node:fs"); const p=process.env.AGENT_ZERO_SOURCE+"/usr/plugins/_model_config/config.json"; const model={provider:"openai",name:"capture-agent-zero",api_key:"local-capture-only",api_base:"http://127.0.0.1:8787/v1",ctx_length:128000,vision:false,max_embeds:0,rl_requests:0,rl_input:0,rl_output:0,kwargs:{a0_api_mode:"chat_completions"}}; fs.writeFileSync(p,JSON.stringify({allow_chat_override:false,chat_model:{...model,ctx_history:0.7},utility_model:{...model,ctx_input:0.7},embedding_model:{provider:"huggingface",name:"sentence-transformers/all-MiniLM-L6-v2",api_base:"",rl_requests:0,rl_input:0,kwargs:{}}},null,2)+"\n")'
+          "$RUNNER_TEMP/agent-zero-venv/bin/python" scripts/capture-agent-zero.py
+
+      - name: Capture OpenHands CLI instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          ALL_PROXY: http://127.0.0.1:9
+          HOME: ${{ runner.temp }}/openhands-home
+          HTTP_PROXY: http://127.0.0.1:9
+          HTTPS_PROXY: http://127.0.0.1:9
+          LLM_API_KEY: local-capture-only
+          LLM_BASE_URL: http://127.0.0.1:8787/v1
+          LLM_MODEL: openai/capture-openhands
+          NO_PROXY: 127.0.0.1,localhost
+          OPENHANDS_CONVERSATIONS_DIR: ${{ runner.temp }}/openhands-state/conversations
+          OPENHANDS_PERSISTENCE_DIR: ${{ runner.temp }}/openhands-state
+          OPENHANDS_WORK_DIR: ${{ runner.temp }}/harness-sandbox
+        run: |
+          mkdir -p "$HOME" "$OPENHANDS_CONVERSATIONS_DIR"
+          openhands --headless --json --override-with-envs \
+            -t "Reply with the word captured."
+
+      - name: Capture oh-my-pi instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          CAPTURE_API_KEY: local-capture-only
+          HOME: ${{ runner.temp }}/omp-home
+          OTEL_SDK_DISABLED: "true"
+          PI_CODING_AGENT_DIR: ${{ runner.temp }}/omp-home/.omp/agent
+        run: |
+          mkdir -p "$PI_CODING_AGENT_DIR"
+          printf '%s\n' \
+            'providers:' \
+            '  capture:' \
+            '    baseUrl: http://127.0.0.1:8787/v1' \
+            '    apiKey: CAPTURE_API_KEY' \
+            '    api: openai-completions' \
+            '    models:' \
+            '      - id: capture-omp' \
+            '        name: Capture OMP' \
+            '        contextWindow: 128000' \
+            '        maxTokens: 4096' \
+            > "$PI_CODING_AGENT_DIR/models.yml"
+          printf '%s\n' \
+            'startup:' \
+            '  checkUpdate: false' \
+            '  quiet: true' \
+            'marketplace:' \
+            '  autoUpdate: off' \
+            'dev:' \
+            '  autoqa: false' \
+            > "$RUNNER_TEMP/omp-config.yml"
+          omp --provider capture --model capture-omp \
+            --no-session --print --no-pty --no-title \
+            --config "$RUNNER_TEMP/omp-config.yml" \
+            "Reply with the word captured."
+
+      - name: Capture OpenSquilla instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          CAPTURE_API_KEY: local-capture-only
+          CUSTOM_LLM_API_KEY: local-capture-only
+          HOME: ${{ runner.temp }}/opensquilla-home
+          OPENSQUILLA_GATEWAY_CONFIG_PATH: ${{ runner.temp }}/opensquilla.toml
+          OPENSQUILLA_PRIVACY_DISABLE_NETWORK_OBSERVABILITY: "true"
+          OPENSQUILLA_PROMPT_MODE: full
+          OPENSQUILLA_STATE_DIR: ${{ runner.temp }}/opensquilla-state
+          OPENSQUILLA_TELEMETRY_DISABLED: "true"
+          OPENSQUILLA_UPDATE_CHECK_DISABLED: "true"
+        run: |
+          mkdir -p "$HOME" "$OPENSQUILLA_STATE_DIR"
+          printf '%s\n' \
+            "workspace_dir = \"$RUNNER_TEMP/harness-sandbox\"" \
+            "state_dir = \"$RUNNER_TEMP/opensquilla-state/state\"" \
+            'workspace_strict = true' \
+            '' \
+            '[privacy]' \
+            'disable_network_observability = true' \
+            '' \
+            '[llm]' \
+            'provider = "custom"' \
+            'model = "capture-opensquilla"' \
+            'api_key_env = "CAPTURE_API_KEY"' \
+            'base_url = "http://127.0.0.1:8787/v1"' \
+            'max_tokens = 4096' \
+            'context_window_tokens = 128000' \
+            '' \
+            '[llm_ensemble]' \
+            'enabled = false' \
+            '' \
+            '[squilla_router]' \
+            'enabled = false' \
+            '' \
+            '[prompt]' \
+            'platform_hint_enabled = false' \
+            > "$OPENSQUILLA_GATEWAY_CONFIG_PATH"
+          opensquilla agent --json --stateless --no-memory-capture \
+            --session-db-path :memory: \
+            --workspace "$RUNNER_TEMP/harness-sandbox" --workspace-strict \
+            --permissions restricted --max-iterations 1 \
+            --model capture-opensquilla \
+            -m "Reply with the word captured."
+
+      - name: Capture MiMo Code instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          HOME: ${{ runner.temp }}/mimo-home
+          MIMOCODE_CONFIG_CONTENT: >-
+            {"$schema":"https://mimo.xiaomi.com/mimocode/config.json","autoupdate":false,"share":"disabled","snapshot":false,"model":"capture/capture-mimo-code","small_model":"capture/capture-mimo-code","enabled_providers":["capture"],"provider":{"capture":{"name":"Local capture API","npm":"@ai-sdk/openai-compatible","env":[],"only_configured_models":true,"options":{"baseURL":"http://127.0.0.1:8787/v1","apiKey":"local-capture-only","includeUsage":true},"models":{"capture-mimo-code":{"name":"Capture MiMo","tool_call":true,"attachment":false,"reasoning":false,"limit":{"context":128000,"output":4096},"modalities":{"input":["text"],"output":["text"]}}}}},"checkpoint":{"thresholds":[]},"dream":{"auto":false},"distill":{"auto":false},"experimental":{"openTelemetry":false,"predict_next_prompt":false}}
+          MIMOCODE_DISABLE_AUTOUPDATE: "1"
+          MIMOCODE_DISABLE_BUILTIN_SKILLS: "1"
+          MIMOCODE_DISABLE_CLAUDE_CODE: "1"
+          MIMOCODE_DISABLE_CLAUDE_IMPORT: "1"
+          MIMOCODE_DISABLE_COMPOSE_SKILLS: "1"
+          MIMOCODE_DISABLE_DEFAULT_PLUGINS: "1"
+          MIMOCODE_DISABLE_EXTERNAL_SKILLS: "1"
+          MIMOCODE_DISABLE_MODELS_FETCH: "1"
+          MIMOCODE_DISABLE_PROJECT_CONFIG: "1"
+          MIMOCODE_ENABLE_ANALYSIS: "false"
+          MIMOCODE_HOME: ${{ runner.temp }}/mimocode-home
+          OTEL_SDK_DISABLED: "true"
+        run: |
+          mkdir -p "$HOME" "$MIMOCODE_HOME"
+          mimo --pure run --dir "$RUNNER_TEMP/harness-sandbox" \
+            --model capture/capture-mimo-code \
+            --title "Harness capture" --format json \
+            "Reply with the word captured."
+
+      - name: Capture Crush instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          CAPTURE_API_KEY: local-capture-only
+          CRUSH_CACHE_DIR: ${{ runner.temp }}/crush-cache
+          CRUSH_DISABLE_METRICS: "1"
+          CRUSH_DISABLE_PROVIDER_AUTO_UPDATE: "1"
+          CRUSH_GLOBAL_CONFIG: ${{ runner.temp }}/crush-global-config
+          CRUSH_GLOBAL_DATA: ${{ runner.temp }}/crush-global-data
+          CRUSH_SKILLS_DIR: ${{ runner.temp }}/crush-skills
+          DO_NOT_TRACK: "1"
+        run: |
+          mkdir -p "$CRUSH_GLOBAL_CONFIG" "$CRUSH_GLOBAL_DATA" "$CRUSH_SKILLS_DIR"
+          node -e 'const fs=require("node:fs"); const config={"$schema":"https://charm.land/crush.json",options:{disable_provider_auto_update:true,disable_metrics:true,disable_default_providers:true,data_directory:process.env.RUNNER_TEMP+"/crush-data"},providers:{capture:{id:"capture",name:"Local capture API",type:"openai-compat",base_url:"http://127.0.0.1:8787/v1",api_key:"$CAPTURE_API_KEY",discover_models:false,models:[{id:"capture-crush",name:"Capture Crush",context_window:128000,default_max_tokens:4096}]}},models:{large:{model:"capture-crush",provider:"capture"},small:{model:"capture-crush",provider:"capture"}}}; fs.writeFileSync(process.env.CRUSH_GLOBAL_CONFIG+"/crush.json",JSON.stringify(config,null,2)+"\n")'
+          crush --cwd "$RUNNER_TEMP/harness-sandbox" \
+            --data-dir "$RUNNER_TEMP/crush-data" \
+            run --quiet --model capture/capture-crush \
+            "Reply with the word captured."
+
+      - name: Capture Aider instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          AIDER_ANALYTICS: "false"
+          AIDER_ANALYTICS_DISABLE: "true"
+          AIDER_CHECK_UPDATE: "false"
+          HOME: ${{ runner.temp }}/aider-home
+          OPENAI_API_BASE: http://127.0.0.1:8787/v1
+          OPENAI_API_KEY: local-capture-only
+        run: |
+          mkdir -p "$HOME"
+          printf '%s\n' \
+            'model: openai/capture-aider' \
+            'openai-api-key: local-capture-only' \
+            'openai-api-base: http://127.0.0.1:8787/v1' \
+            'analytics: false' \
+            'check-update: false' \
+            'show-release-notes: false' \
+            'stream: false' \
+            'yes-always: true' \
+            'auto-commits: false' \
+            'dirty-commits: false' \
+            'gitignore: false' \
+            'restore-chat-history: false' \
+            "input-history-file: $RUNNER_TEMP/aider-input-history" \
+            "chat-history-file: $RUNNER_TEMP/aider-chat-history" \
+            > "$RUNNER_TEMP/aider.conf.yml"
+          aider --config "$RUNNER_TEMP/aider.conf.yml" \
+            --no-analytics --no-git \
+            --edit-format whole \
+            --no-show-model-warnings \
+            --no-check-model-accepts-settings \
+            --message "Reply with the word captured."
 
       - name: Capture Codex instructions
         working-directory: ${{ runner.temp }}/harness-sandbox
@@ -257,6 +473,8 @@ jobs:
       - name: Record harness versions
         id: versions
         run: |
+          echo "agent_zero=$(git -C "$RUNNER_TEMP/agent-zero" describe --tags --exact-match)" >> "$GITHUB_OUTPUT"
+          echo "aider=$(aider --version)" >> "$GITHUB_OUTPUT"
           echo "codex=$(codex --version)" >> "$GITHUB_OUTPUT"
           echo "claude_code=$(claude --version)" >> "$GITHUB_OUTPUT"
           echo "gemini_cli=$(gemini --version)" >> "$GITHUB_OUTPUT"
@@ -265,6 +483,11 @@ jobs:
           echo "qwen_code=$(qwen --version)" >> "$GITHUB_OUTPUT"
           echo "grok_code_cli=$(grok version)" >> "$GITHUB_OUTPUT"
           echo "pi=$(pi --version)" >> "$GITHUB_OUTPUT"
+          echo "crush=$(crush --version)" >> "$GITHUB_OUTPUT"
+          echo "mimo_code=$(mimo --version)" >> "$GITHUB_OUTPUT"
+          echo "omp=$(omp --version)" >> "$GITHUB_OUTPUT"
+          echo "openhands=$(openhands --version)" >> "$GITHUB_OUTPUT"
+          echo "opensquilla=$(opensquilla version)" >> "$GITHUB_OUTPUT"
           echo "kilo_code_cli=$(kilo --version)" >> "$GITHUB_OUTPUT"
           echo "cline_cli=$(cline --version)" >> "$GITHUB_OUTPUT"
           CLINE_SDK_VERSION=$(node -p "require(process.env.RUNNER_TEMP + '/cline-sdk-runner/node_modules/@cline/sdk/package.json').version")
@@ -290,6 +513,13 @@ jobs:
             prompts/cline-sdk.md \
             prompts/openclaw.md \
             prompts/hermes-agent.md \
+            prompts/agent-zero.md \
+            prompts/aider.md \
+            prompts/crush.md \
+            prompts/mimo-code.md \
+            prompts/omp.md \
+            prompts/openhands.md \
+            prompts/opensquilla.md \
             "$RUNNER_TEMP/cli-captures/prompts/"
 
       - uses: actions/upload-artifact@v4
@@ -409,15 +639,22 @@ jobs:
       - name: Validate snapshots
         env:
           REQUIRE_ALL_CAPTURES: "1"
+          AGENT_ZERO_VERSION: ${{ needs.capture-cli.outputs.agent_zero_version }}
+          AIDER_VERSION: ${{ needs.capture-cli.outputs.aider_version }}
           CODEX_VERSION: ${{ needs.capture-cli.outputs.codex_version }}
           CODEX_DESKTOP_VERSION: ${{ needs.capture-codex-desktop.outputs.version }}
           CLAUDE_CODE_VERSION: ${{ needs.capture-cli.outputs.claude_code_version }}
           CLINE_CLI_VERSION: ${{ needs.capture-cli.outputs.cline_cli_version }}
           CLINE_SDK_VERSION: ${{ needs.capture-cli.outputs.cline_sdk_version }}
+          CRUSH_VERSION: ${{ needs.capture-cli.outputs.crush_version }}
           GEMINI_CLI_VERSION: ${{ needs.capture-cli.outputs.gemini_cli_version }}
           HERMES_AGENT_VERSION: ${{ needs.capture-cli.outputs.hermes_agent_version }}
           KILO_CODE_CLI_VERSION: ${{ needs.capture-cli.outputs.kilo_code_cli_version }}
+          MIMO_CODE_VERSION: ${{ needs.capture-cli.outputs.mimo_code_version }}
+          OMP_VERSION: ${{ needs.capture-cli.outputs.omp_version }}
           OPENCODE_VERSION: ${{ needs.capture-cli.outputs.opencode_version }}
+          OPENHANDS_VERSION: ${{ needs.capture-cli.outputs.openhands_version }}
+          OPENSQUILLA_VERSION: ${{ needs.capture-cli.outputs.opensquilla_version }}
           OPENCLAW_VERSION: ${{ needs.capture-cli.outputs.openclaw_version }}
           KIMI_CLI_VERSION: ${{ needs.capture-cli.outputs.kimi_cli_version }}
           QWEN_CODE_VERSION: ${{ needs.capture-cli.outputs.qwen_code_version }}
@@ -442,6 +679,13 @@ jobs:
           test -s prompts/qwen-code.md
           test -s prompts/grok-code-cli.md
           test -s prompts/pi.md
+          test -s prompts/agent-zero.md
+          test -s prompts/aider.md
+          test -s prompts/crush.md
+          test -s prompts/mimo-code.md
+          test -s prompts/omp.md
+          test -s prompts/openhands.md
+          test -s prompts/opensquilla.md
 
       - name: Commit changed snapshots
         run: |
