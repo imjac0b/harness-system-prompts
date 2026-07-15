@@ -6,6 +6,12 @@ type HarnessMetadata = {
 type Metadata = {
   claude_code: HarnessMetadata;
   codex: HarnessMetadata;
+  gemini_cli: HarnessMetadata;
+  grok_code_cli: HarnessMetadata;
+  kimi_cli: HarnessMetadata;
+  opencode: HarnessMetadata;
+  pi: HarnessMetadata;
+  qwen_code: HarnessMetadata;
 };
 
 const startMarker = "<!-- harness-results:start -->";
@@ -19,6 +25,12 @@ export function renderResults(metadata: Metadata): string {
   const rows = [
     ["Codex CLI", metadata.codex, "prompts/codex.md"],
     ["Claude Code", metadata.claude_code, "prompts/claude-code.md"],
+    ["Gemini CLI", metadata.gemini_cli, "prompts/gemini-cli.md"],
+    ["OpenCode", metadata.opencode, "prompts/opencode.md"],
+    ["Kimi CLI", metadata.kimi_cli, "prompts/kimi-cli.md"],
+    ["Qwen Code", metadata.qwen_code, "prompts/qwen-code.md"],
+    ["Grok Code CLI", metadata.grok_code_cli, "prompts/grok-code-cli.md"],
+    ["Pi", metadata.pi, "prompts/pi.md"],
   ] as const;
 
   return [

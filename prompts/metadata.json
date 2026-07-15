@@ -6,5 +6,29 @@
   "codex": {
     "captured": true,
     "version": "codex-cli 0.144.4"
+  },
+  "gemini_cli": {
+    "captured": false,
+    "version": "unknown"
+  },
+  "grok_code_cli": {
+    "captured": false,
+    "version": "unknown"
+  },
+  "kimi_cli": {
+    "captured": false,
+    "version": "unknown"
+  },
+  "opencode": {
+    "captured": false,
+    "version": "unknown"
+  },
+  "pi": {
+    "captured": false,
+    "version": "unknown"
+  },
+  "qwen_code": {
+    "captured": false,
+    "version": "unknown"
   }
 }

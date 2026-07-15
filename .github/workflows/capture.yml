@@ -25,11 +25,26 @@ jobs:
         with:
           bun-version: latest
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: astral-sh/setup-uv@v6
+
       - name: Install project dependencies
         run: bun install --frozen-lockfile
 
       - name: Install harnesses
-        run: bun add --global @openai/codex@latest @anthropic-ai/claude-code@latest
+        run: |
+          bun add --global \
+            @anthropic-ai/claude-code@latest \
+            @earendil-works/pi-coding-agent@latest \
+            @google/gemini-cli@latest \
+            @openai/codex@latest \
+            @qwen-code/qwen-code@latest \
+            @xai-official/grok@latest \
+            opencode-ai@latest
+          uv tool install --python 3.13 kimi-cli
 
       - name: Start local capture APIs
         run: |
@@ -74,12 +89,81 @@ jobs:
           CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
         run: claude --print "Reply with the word captured." --model capture-model --max-turns 1 --no-session-persistence
 
+      - name: Capture Gemini CLI instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          GEMINI_API_KEY: local-capture-only
+          GEMINI_CLI_TRUST_WORKSPACE: "true"
+          GOOGLE_GEMINI_BASE_URL: http://127.0.0.1:8787
+          HOME: ${{ runner.temp }}/gemini-home
+        run: |
+          mkdir -p "$HOME"
+          gemini -p "Reply with the word captured." --model capture-gemini --output-format json
+
+      - name: Capture OpenCode instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          CAPTURE_API_KEY: local-capture-only
+          OPENCODE_CONFIG: ${{ runner.temp }}/opencode.json
+          OPENCODE_DISABLE_AUTOUPDATE: "true"
+          OPENCODE_DISABLE_MODELS_FETCH: "true"
+          XDG_CONFIG_HOME: ${{ runner.temp }}/opencode-config
+          XDG_DATA_HOME: ${{ runner.temp }}/opencode-data
+        run: |
+          printf '%s\n' '{"provider":{"capture":{"npm":"@ai-sdk/openai-compatible","name":"Local capture API","options":{"baseURL":"http://127.0.0.1:8787/v1","apiKey":"{env:CAPTURE_API_KEY}"},"models":{"capture-opencode":{"name":"Capture OpenCode"}}}}}' > "$OPENCODE_CONFIG"
+          opencode run --model capture/capture-opencode "Reply with the word captured."
+
+      - name: Capture Kimi CLI instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          KIMI_CLI_NO_AUTO_UPDATE: "1"
+        run: |
+          kimi --config '{"default_model":"capture-kimi","telemetry":false,"providers":{"capture":{"type":"openai_legacy","base_url":"http://127.0.0.1:8787/v1","api_key":"local-capture-only"}},"models":{"capture-kimi":{"provider":"capture","model":"capture-kimi","max_context_size":128000}}}' \
+            --quiet -p "Reply with the word captured."
+
+      - name: Capture Qwen Code instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          CAPTURE_API_KEY: local-capture-only
+          QWEN_HOME: ${{ runner.temp }}/qwen-home
+        run: |
+          mkdir -p "$QWEN_HOME"
+          printf '%s\n' '{"general":{"enableAutoUpdate":false},"modelProviders":{"openai":[{"id":"capture-qwen","name":"Capture Qwen","envKey":"CAPTURE_API_KEY","baseUrl":"http://127.0.0.1:8787/v1"}]},"security":{"auth":{"selectedType":"openai"}},"model":{"name":"capture-qwen"}}' > "$QWEN_HOME/settings.json"
+          qwen -p "Reply with the word captured." --model capture-qwen --output-format json
+
+      - name: Capture Grok Code CLI instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          HOME: ${{ runner.temp }}/grok-home
+          XAI_API_KEY: local-capture-only
+        run: |
+          mkdir -p "$HOME/.grok"
+          printf '%s\n' '[model.capture]' 'model = "capture-grok"' 'base_url = "http://127.0.0.1:8787/v1"' 'name = "Local capture API"' 'env_key = "XAI_API_KEY"' '' '[models]' 'default = "capture"' > "$HOME/.grok/config.toml"
+          grok -p "Reply with the word captured." --model capture --output-format streaming-json
+
+      - name: Capture Pi instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          HOME: ${{ runner.temp }}/pi-home
+        run: |
+          mkdir -p "$HOME/.pi/agent"
+          printf '%s\n' '{"providers":{"capture":{"baseUrl":"http://127.0.0.1:8787/v1","api":"openai-completions","apiKey":"local-capture-only","models":[{"id":"capture-pi","name":"Capture Pi"}]}}}' > "$HOME/.pi/agent/models.json"
+          pi --provider capture --model capture-pi --no-session --print "Reply with the word captured."
+
       - name: Record harness versions
         run: |
           echo "CODEX_VERSION=$(codex --version)" >> "$GITHUB_ENV"
           echo "CLAUDE_CODE_VERSION=$(claude --version)" >> "$GITHUB_ENV"
+          echo "GEMINI_CLI_VERSION=$(gemini --version)" >> "$GITHUB_ENV"
+          echo "OPENCODE_VERSION=$(opencode --version)" >> "$GITHUB_ENV"
+          echo "KIMI_CLI_VERSION=$(kimi --version)" >> "$GITHUB_ENV"
+          echo "QWEN_CODE_VERSION=$(qwen --version)" >> "$GITHUB_ENV"
+          echo "GROK_CODE_CLI_VERSION=$(grok version)" >> "$GITHUB_ENV"
+          echo "PI_VERSION=$(pi --version)" >> "$GITHUB_ENV"
 
       - name: Validate snapshots
+        env:
+          REQUIRE_ALL_CAPTURES: "1"
         run: |
           bun run metadata
           bun run readme
@@ -87,10 +171,16 @@ jobs:
           bun run typecheck
           test -s prompts/codex.md
           test -s prompts/claude-code.md
+          test -s prompts/gemini-cli.md
+          test -s prompts/opencode.md
+          test -s prompts/kimi-cli.md
+          test -s prompts/qwen-code.md
+          test -s prompts/grok-code-cli.md
+          test -s prompts/pi.md
 
       - name: Commit changed snapshots
         run: |
-          git add README.md prompts/codex.md prompts/claude-code.md prompts/metadata.json
+          git add README.md prompts/*.md prompts/metadata.json
           if git diff --cached --quiet; then
             echo "Harness prompts are unchanged."
             exit 0

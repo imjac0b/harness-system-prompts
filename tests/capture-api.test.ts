@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { extractAnthropic, extractOpenAI, writeSnapshot } from "../scripts/capture-api";
+import { extractAnthropic, extractChatCompletions, extractGemini, extractOpenAI, writeSnapshot } from "../scripts/capture-api";
 
 test("extracts OpenAI instructions and developer input", () => {
   expect(
@@ -27,6 +27,23 @@ test("extracts Anthropic text blocks", () => {
       "system",
       "x-anthropic-billing-header: cc_version=2.1.210.814; cc_entrypoint=sdk-cli;\nfirst\n - OS Version: Linux\nsecond",
     ],
+  ]);
+});
+
+test("extracts OpenAI-compatible system messages", () => {
+  expect(extractChatCompletions({ messages: [
+    { role: "system", content: "base prompt" },
+    { role: "developer", content: [{ type: "text", text: "repo prompt" }] },
+    { role: "user", content: "skip me" },
+  ] })).toEqual([
+    ["system 1", "base prompt"],
+    ["developer 2", "repo prompt"],
+  ]);
+});
+
+test("extracts Gemini system instructions", () => {
+  expect(extractGemini({ systemInstruction: { parts: [{ text: "base prompt" }] } })).toEqual([
+    ["system instruction", "base prompt"],
   ]);
 });
 

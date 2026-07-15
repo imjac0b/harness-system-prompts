@@ -11,7 +11,7 @@ export function textFrom(value: unknown): string {
   if (Array.isArray(value)) return value.map(textFrom).filter(Boolean).join("\n");
   if (value && typeof value === "object") {
     const record = value as JsonObject;
-    for (const key of ["text", "input_text", "content"]) {
+    for (const key of ["text", "input_text", "content", "parts"]) {
       if (key in record) return textFrom(record[key]);
     }
   }
@@ -56,6 +56,37 @@ export function extractAnthropic(payload: JsonObject): Section[] {
     })
     .replace(/^ - OS Version: Linux\s+.+$/m, " - OS Version: Linux");
   return uniqueSections([["system", system]]);
+}
+
+export function extractChatCompletions(payload: JsonObject): Section[] {
+  if (!Array.isArray(payload.messages)) return [];
+  return uniqueSections(
+    payload.messages.flatMap((item, index) => {
+      if (!item || typeof item !== "object") return [];
+      const message = item as JsonObject;
+      if (message.role !== "system" && message.role !== "developer") return [];
+      return [[`${message.role} ${index + 1}`, textFrom(message.content)] satisfies Section];
+    }),
+  );
+}
+
+export function extractGemini(payload: JsonObject): Section[] {
+  return uniqueSections([
+    ["system instruction", textFrom(payload.systemInstruction ?? payload.system_instruction)],
+  ]);
+}
+
+const snapshotsByModel: Record<string, string> = {
+  "capture-gemini": "gemini-cli.md",
+  "capture-grok": "grok-code-cli.md",
+  "capture-kimi": "kimi-cli.md",
+  "capture-opencode": "opencode.md",
+  "capture-pi": "pi.md",
+  "capture-qwen": "qwen-code.md",
+};
+
+function snapshotForModel(model: unknown, fallback: string): string {
+  return snapshotsByModel[String(model)] ?? fallback;
 }
 
 export async function writeSnapshot(
@@ -115,6 +146,39 @@ function openAIResponse(model: string): Response {
   ]);
 }
 
+function chatCompletionsResponse(model: string, stream: boolean): Response {
+  const completion = {
+    id: "chatcmpl_capture",
+    object: "chat.completion",
+    created: 0,
+    model,
+    choices: [{ index: 0, message: { role: "assistant", content: "captured" }, finish_reason: "stop" }],
+    usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+  };
+  if (!stream) return Response.json(completion);
+
+  const chunks = [
+    { id: completion.id, object: "chat.completion.chunk", created: 0, model, choices: [{ index: 0, delta: { role: "assistant", content: "captured" }, finish_reason: null }] },
+    { id: completion.id, object: "chat.completion.chunk", created: 0, model, choices: [{ index: 0, delta: {}, finish_reason: "stop" }], usage: completion.usage },
+  ];
+  return new Response(`${chunks.map((chunk) => `data: ${JSON.stringify(chunk)}\n\n`).join("")}data: [DONE]\n\n`, {
+    headers: { "cache-control": "no-cache", "content-type": "text/event-stream" },
+  });
+}
+
+function geminiResponse(model: string, stream: boolean): Response {
+  const response = {
+    candidates: [{ content: { role: "model", parts: [{ text: "captured" }] }, finishReason: "STOP", index: 0 }],
+    usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 },
+    modelVersion: model,
+    responseId: "capture",
+  };
+  if (!stream) return Response.json(response);
+  return new Response(`data: ${JSON.stringify(response)}\n\n`, {
+    headers: { "cache-control": "no-cache", "content-type": "text/event-stream" },
+  });
+}
+
 function anthropicResponse(model: string): Response {
   return sse([
     ["message_start", { type: "message_start", message: { id: "msg_capture", type: "message", role: "assistant", model, content: [], stop_reason: null, stop_sequence: null, usage: { input_tokens: 1, output_tokens: 0 } } }],
@@ -132,7 +196,13 @@ export async function handleRequest(request: Request): Promise<Response> {
     return Response.json({ status: "ok" });
   }
   if (request.method === "GET" && url.pathname.endsWith("/models")) {
+    if (url.pathname.includes("/v1beta/")) {
+      return Response.json({ models: [{ name: "models/capture-gemini", displayName: "Capture Gemini" }] });
+    }
     return Response.json({ object: "list", data: [{ id: "capture-model", object: "model", owned_by: "local" }] });
+  }
+  if (request.method === "GET" && url.pathname.includes("/models/capture-gemini")) {
+    return Response.json({ name: "models/capture-gemini", displayName: "Capture Gemini" });
   }
   if (request.method !== "POST") return Response.json({ error: "not found" }, { status: 404 });
 
@@ -144,13 +214,26 @@ export async function handleRequest(request: Request): Promise<Response> {
   }
 
   if (url.pathname.endsWith("/messages/count_tokens")) return Response.json({ input_tokens: 1 });
+  if (url.pathname.includes(":countTokens")) return Response.json({ totalTokens: 1 });
   if (url.pathname.endsWith("/messages")) {
     await writeSnapshot("claude-code.md", extractAnthropic(payload));
     return anthropicResponse(String(payload.model ?? "capture-model"));
   }
   if (url.pathname.endsWith("/responses")) {
-    await writeSnapshot("codex.md", extractOpenAI(payload));
-    return openAIResponse(String(payload.model ?? "capture-model"));
+    const model = String(payload.model ?? "capture-model");
+    await writeSnapshot(snapshotForModel(model, "codex.md"), extractOpenAI(payload));
+    return openAIResponse(model);
+  }
+  if (url.pathname.endsWith("/chat/completions")) {
+    const model = String(payload.model ?? "capture-model");
+    await writeSnapshot(snapshotForModel(model, "openai-compatible.md"), extractChatCompletions(payload));
+    return chatCompletionsResponse(model, payload.stream === true);
+  }
+  if (url.pathname.includes(":generateContent") || url.pathname.includes(":streamGenerateContent")) {
+    const match = url.pathname.match(/\/models\/([^/:]+)/);
+    const model = match?.[1] ?? "capture-gemini";
+    await writeSnapshot(snapshotForModel(model, "gemini-cli.md"), extractGemini(payload));
+    return geminiResponse(model, url.pathname.includes(":streamGenerateContent"));
   }
   return Response.json({ error: "not found" }, { status: 404 });
 }
