@@ -97,14 +97,19 @@ export function extractCline(payload: JsonObject): Section[] {
 export function extractHermes(payload: JsonObject): Section[] {
   return extractChatCompletions(payload).map(([label, content]) => [
     label,
-    content.replace(/^Conversation started: .+$/gm, "Conversation started: <CURRENT_DATE>"),
+    content
+      .replace(/^Conversation started: .+$/gm, "Conversation started: <CURRENT_DATE>")
+      .replace(/^Host: Linux \([^)]+\)$/gm, "Host: Linux (<KERNEL_VERSION>)"),
   ]);
 }
 
 export function extractOpenClaw(payload: JsonObject): Section[] {
   return extractChatCompletions(payload).map(([label, content]) => [
     label,
-    content.replace(/sessionId=[^ |]+/g, "sessionId=<SESSION_ID>"),
+    content
+      .replace(/sessionId=[^ |]+/g, "sessionId=<SESSION_ID>")
+      .replace(/host=[^ |]+/g, "host=<HOSTNAME>")
+      .replace(/os=Linux [^|]+ \(([^)]+)\)/g, "os=Linux <KERNEL_VERSION> ($1)"),
   ]);
 }
 

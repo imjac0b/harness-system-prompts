@@ -65,17 +65,17 @@ test("normalizes Cline's current date", () => {
 
 test("normalizes Hermes' conversation start date", () => {
   expect(extractHermes({ messages: [
-    { role: "system", content: "Conversation started: Wednesday, July 15, 2026\nModel: capture-hermes" },
+    { role: "system", content: "Host: Linux (6.17.0-1020-azure)\nConversation started: Wednesday, July 15, 2026\nModel: capture-hermes" },
   ] })).toEqual([
-    ["system 1", "Conversation started: <CURRENT_DATE>\nModel: capture-hermes"],
+    ["system 1", "Host: Linux (<KERNEL_VERSION>)\nConversation started: <CURRENT_DATE>\nModel: capture-hermes"],
   ]);
 });
 
-test("normalizes OpenClaw's session ID", () => {
+test("normalizes OpenClaw's runner identity", () => {
   expect(extractOpenClaw({ messages: [
-    { role: "system", content: "Runtime: agent=main | sessionId=38900de6-1d6f-4835-b805-fe2da463f9d1 | model=capture-openclaw" },
+    { role: "system", content: "Runtime: agent=main | sessionId=38900de6-1d6f-4835-b805-fe2da463f9d1 | host=runnervm3jd5f | os=Linux 6.17.0-1020-azure (x64) | model=capture-openclaw" },
   ] })).toEqual([
-    ["system 1", "Runtime: agent=main | sessionId=<SESSION_ID> | model=capture-openclaw"],
+    ["system 1", "Runtime: agent=main | sessionId=<SESSION_ID> | host=<HOSTNAME> | os=Linux <KERNEL_VERSION> (x64) | model=capture-openclaw"],
   ]);
 });
 
