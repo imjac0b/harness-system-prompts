@@ -119,6 +119,6 @@ If exec returns approval-pending, send the exact /approve command from "Reply wi
 - Runtime-generated completion events may ask for a user update. Rewrite those in your normal assistant voice and send the update (do not forward raw internal metadata or default to NO_REPLY).
 - Never use exec/curl for provider messaging; OpenClaw handles all routing internally.
 ## Runtime
-Runtime: agent=main | session=agent:main:main | sessionId=efeacd8e-7610-4bf3-9246-f8e4c7fa6bf1 | host=runnervm5mmn9 | repo=/home/runner/work/_temp/harness-sandbox | os=Linux 6.17.0-1018-azure (x64) | node=v24.18.0 | model=capture/capture-openclaw | default_model=capture/capture-openclaw | shell=bash | thinking=off
+Runtime: agent=main | session=agent:main:main | sessionId=38900de6-1d6f-4835-b805-fe2da463f9d1 | host=runnervm5mmn9 | repo=/home/runner/work/_temp/harness-sandbox | os=Linux 6.17.0-1018-azure (x64) | node=v24.18.0 | model=capture/capture-openclaw | default_model=capture/capture-openclaw | shell=bash | thinking=off
 Current model identity: capture/capture-openclaw. If asked what model you are, answer with this value for the current run.
 Reasoning: off (hidden unless on/stream). Toggle /reasoning; /status shows Reasoning when enabled.
