@@ -94,15 +94,20 @@ export function extractGemini(payload: JsonObject): Section[] {
 }
 
 const snapshotsByModel: Record<string, string> = {
+  "capture-cline-cli": "cline-cli.md",
+  "capture-cline-sdk": "cline-sdk.md",
   "capture-gemini": "gemini-cli.md",
   "capture-grok": "grok-code-cli.md",
+  "capture-hermes": "hermes-agent.md",
   "capture-kimi": "kimi-cli.md",
+  "capture-kilo-code": "kilo-code-cli.md",
+  "capture-openclaw": "openclaw.md",
   "capture-opencode": "opencode.md",
   "capture-pi": "pi.md",
   "capture-qwen": "qwen-code.md",
 };
 
-function snapshotForModel(model: unknown, fallback: string): string {
+export function snapshotForModel(model: unknown, fallback: string): string {
   return snapshotsByModel[String(model)] ?? fallback;
 }
 
@@ -221,7 +226,14 @@ export async function handleRequest(request: Request): Promise<Response> {
     if (url.pathname.includes("/v1beta/")) {
       return Response.json({ models: [{ name: "models/capture-gemini", displayName: "Capture Gemini" }] });
     }
-    return Response.json({ object: "list", data: [{ id: "capture-model", object: "model", owned_by: "local" }] });
+    return Response.json({
+      object: "list",
+      data: ["capture-model", ...Object.keys(snapshotsByModel)].map((id) => ({
+        id,
+        object: "model",
+        owned_by: "local",
+      })),
+    });
   }
   if (request.method === "GET" && url.pathname.includes("/models/capture-gemini")) {
     return Response.json({ name: "models/capture-gemini", displayName: "Capture Gemini" });

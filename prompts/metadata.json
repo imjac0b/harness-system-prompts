@@ -3,6 +3,14 @@
     "captured": true,
     "version": "2.1.210 (Claude Code)"
   },
+  "cline_cli": {
+    "captured": false,
+    "version": "unknown"
+  },
+  "cline_sdk": {
+    "captured": false,
+    "version": "unknown"
+  },
   "codex": {
     "captured": true,
     "version": "codex-cli 0.144.4"
@@ -19,9 +27,21 @@
     "captured": true,
     "version": "grok 0.2.101 (5bc4b5dfad)"
   },
+  "hermes_agent": {
+    "captured": false,
+    "version": "unknown"
+  },
+  "kilo_code_cli": {
+    "captured": false,
+    "version": "unknown"
+  },
   "kimi_cli": {
     "captured": true,
     "version": "kimi, version 1.48.0"
+  },
+  "openclaw": {
+    "captured": false,
+    "version": "unknown"
   },
   "opencode": {
     "captured": true,

@@ -198,6 +198,174 @@ jobs:
         if: failure()
         run: cat "$RUNNER_TEMP/capture-api.log"
 
+  capture-added-harnesses:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      cline_cli_version: ${{ steps.versions.outputs.cline_cli }}
+      cline_sdk_version: ${{ steps.versions.outputs.cline_sdk }}
+      hermes_agent_version: ${{ steps.versions.outputs.hermes_agent }}
+      kilo_code_cli_version: ${{ steps.versions.outputs.kilo_code_cli }}
+      openclaw_version: ${{ steps.versions.outputs.openclaw }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Install project dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install harnesses on the runner
+        run: |
+          bun add --global \
+            @kilocode/cli@latest \
+            cline@latest \
+            openclaw@latest
+          uv tool install --python 3.13 hermes-agent
+          mkdir -p "$RUNNER_TEMP/cline-sdk-runner"
+          cp scripts/capture-cline-sdk.ts "$RUNNER_TEMP/cline-sdk-runner/"
+          cd "$RUNNER_TEMP/cline-sdk-runner"
+          bun init -y
+          bun add @cline/sdk@latest
+
+      - name: Start local capture API
+        run: |
+          bun run capture-api > "$RUNNER_TEMP/capture-api-added.log" 2>&1 &
+          echo "CAPTURE_API_ADDED_PID=$!" >> "$GITHUB_ENV"
+          for attempt in {1..20}; do
+            curl --fail --silent http://127.0.0.1:8787/health && exit 0
+            sleep 0.25
+          done
+          cat "$RUNNER_TEMP/capture-api-added.log"
+          exit 1
+
+      - name: Create clean harness sandbox
+        run: |
+          mkdir -p "$RUNNER_TEMP/harness-sandbox"
+          git -C "$RUNNER_TEMP/harness-sandbox" init --initial-branch=main
+          git -C "$RUNNER_TEMP/harness-sandbox" config user.name "Harness Capture"
+          git -C "$RUNNER_TEMP/harness-sandbox" config user.email "harness-capture@localhost"
+
+      - name: Capture Kilo Code CLI instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          HOME: ${{ runner.temp }}/kilo-home
+          KILO_CONFIG_CONTENT: >-
+            {"provider":{"capture":{"npm":"@ai-sdk/openai-compatible","name":"Local capture API","options":{"baseURL":"http://127.0.0.1:8787/v1","apiKey":"local-capture-only"},"models":{"capture-kilo-code":{"name":"Capture Kilo Code","limit":{"context":128000,"output":4096}}}}},"model":"capture/capture-kilo-code"}
+          KILO_DISABLE_AUTOUPDATE: "true"
+          KILO_DISABLE_MODELS_FETCH: "true"
+          XDG_CONFIG_HOME: ${{ runner.temp }}/kilo-config
+          XDG_DATA_HOME: ${{ runner.temp }}/kilo-data
+        run: kilo run --model capture/capture-kilo-code "Reply with the word captured."
+
+      - name: Capture Cline CLI instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          CLINE_NO_AUTO_UPDATE: "1"
+          CLINE_TELEMETRY_DISABLED: "1"
+          HOME: ${{ runner.temp }}/cline-home
+        run: |
+          cline auth \
+            --provider openai-compatible \
+            --apikey local-capture-only \
+            --modelid capture-cline-cli \
+            --baseurl http://127.0.0.1:8787/v1 \
+            --data-dir "$RUNNER_TEMP/cline-data"
+          cline \
+            --data-dir "$RUNNER_TEMP/cline-data" \
+            --cwd "$RUNNER_TEMP/harness-sandbox" \
+            --provider openai-compatible \
+            --model capture-cline-cli \
+            --key local-capture-only \
+            --json \
+            "Reply with the word captured."
+
+      - name: Capture Cline SDK instructions
+        working-directory: ${{ runner.temp }}/cline-sdk-runner
+        env:
+          CAPTURE_WORKSPACE: ${{ runner.temp }}/harness-sandbox
+          CLINE_TELEMETRY_DISABLED: "1"
+          OTEL_TELEMETRY_ENABLED: "false"
+        run: bun run capture-cline-sdk.ts
+
+      - name: Capture OpenClaw instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          CAPTURE_WORKSPACE: ${{ runner.temp }}/harness-sandbox
+          HOME: ${{ runner.temp }}/openclaw-home
+          OPENCLAW_CONFIG_PATH: ${{ runner.temp }}/openclaw-state/openclaw.json
+          OPENCLAW_STATE_DIR: ${{ runner.temp }}/openclaw-state
+          OPENCLAW_TELEMETRY: "off"
+        run: |
+          mkdir -p "$OPENCLAW_STATE_DIR"
+          node -e 'const fs=require("node:fs"); const config={update:{checkOnStart:false},diagnostics:{enabled:false},gateway:{mode:"local"},agents:{defaults:{workspace:process.env.CAPTURE_WORKSPACE,skipBootstrap:true,model:{primary:"capture/capture-openclaw"}}},models:{mode:"merge",providers:{capture:{baseUrl:"http://127.0.0.1:8787/v1",apiKey:"local-capture-only",api:"openai-completions",models:[{id:"capture-openclaw",name:"Capture OpenClaw",reasoning:false,input:["text"],cost:{input:0,output:0,cacheRead:0,cacheWrite:0},contextWindow:128000,maxTokens:4096}]}}},tools:{profile:"coding"}}; fs.writeFileSync(process.env.OPENCLAW_CONFIG_PATH, JSON.stringify(config,null,2)+"\n")'
+          openclaw agent \
+            --local \
+            --agent main \
+            --message "Reply with the word captured." \
+            --json
+
+      - name: Capture Hermes Agent instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          HERMES_HOME: ${{ runner.temp }}/hermes-home
+        run: |
+          mkdir -p "$HERMES_HOME"
+          printf '%s\n' \
+            'model:' \
+            '  default: "capture-hermes"' \
+            '  provider: "custom"' \
+            '  api_key: "local-capture-only"' \
+            '  base_url: "http://127.0.0.1:8787/v1"' \
+            > "$HERMES_HOME/config.yaml"
+          hermes \
+            --oneshot "Reply with the word captured." \
+            --provider custom \
+            --model capture-hermes \
+            --ignore-rules
+
+      - name: Record harness versions
+        id: versions
+        run: |
+          echo "kilo_code_cli=$(kilo --version)" >> "$GITHUB_OUTPUT"
+          echo "cline_cli=$(cline --version)" >> "$GITHUB_OUTPUT"
+          CLINE_SDK_VERSION=$(node -p "require(process.env.RUNNER_TEMP + '/cline-sdk-runner/node_modules/@cline/sdk/package.json').version")
+          echo "cline_sdk=$CLINE_SDK_VERSION" >> "$GITHUB_OUTPUT"
+          echo "openclaw=$(openclaw --version)" >> "$GITHUB_OUTPUT"
+          echo "hermes_agent=$(hermes --version)" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare added harness capture artifact
+        run: |
+          mkdir -p "$RUNNER_TEMP/added-captures/prompts"
+          cp \
+            prompts/kilo-code-cli.md \
+            prompts/cline-cli.md \
+            prompts/cline-sdk.md \
+            prompts/openclaw.md \
+            prompts/hermes-agent.md \
+            "$RUNNER_TEMP/added-captures/prompts/"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: added-harness-captures
+          path: ${{ runner.temp }}/added-captures
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Show capture API log on failure
+        if: failure()
+        run: cat "$RUNNER_TEMP/capture-api-added.log"
+
   capture-codex-desktop:
     runs-on: macos-latest
     timeout-minutes: 15
@@ -281,7 +449,7 @@ jobs:
         run: hdiutil detach "$RUNNER_TEMP/codex-dmg" || true
 
   publish:
-    needs: [capture-cli, capture-codex-desktop]
+    needs: [capture-cli, capture-added-harnesses, capture-codex-desktop]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -307,8 +475,13 @@ jobs:
           CODEX_VERSION: ${{ needs.capture-cli.outputs.codex_version }}
           CODEX_DESKTOP_VERSION: ${{ needs.capture-codex-desktop.outputs.version }}
           CLAUDE_CODE_VERSION: ${{ needs.capture-cli.outputs.claude_code_version }}
+          CLINE_CLI_VERSION: ${{ needs.capture-added-harnesses.outputs.cline_cli_version }}
+          CLINE_SDK_VERSION: ${{ needs.capture-added-harnesses.outputs.cline_sdk_version }}
           GEMINI_CLI_VERSION: ${{ needs.capture-cli.outputs.gemini_cli_version }}
+          HERMES_AGENT_VERSION: ${{ needs.capture-added-harnesses.outputs.hermes_agent_version }}
+          KILO_CODE_CLI_VERSION: ${{ needs.capture-added-harnesses.outputs.kilo_code_cli_version }}
           OPENCODE_VERSION: ${{ needs.capture-cli.outputs.opencode_version }}
+          OPENCLAW_VERSION: ${{ needs.capture-added-harnesses.outputs.openclaw_version }}
           KIMI_CLI_VERSION: ${{ needs.capture-cli.outputs.kimi_cli_version }}
           QWEN_CODE_VERSION: ${{ needs.capture-cli.outputs.qwen_code_version }}
           GROK_CODE_CLI_VERSION: ${{ needs.capture-cli.outputs.grok_code_cli_version }}
@@ -321,8 +494,13 @@ jobs:
           test -s prompts/codex.md
           test -s prompts/codex-desktop.md
           test -s prompts/claude-code.md
+          test -s prompts/cline-cli.md
+          test -s prompts/cline-sdk.md
           test -s prompts/gemini-cli.md
+          test -s prompts/hermes-agent.md
+          test -s prompts/kilo-code-cli.md
           test -s prompts/opencode.md
+          test -s prompts/openclaw.md
           test -s prompts/kimi-cli.md
           test -s prompts/qwen-code.md
           test -s prompts/grok-code-cli.md

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { extractAnthropic, extractChatCompletions, extractCodexDesktop, extractGemini, extractKimi, extractOpenAI, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
+import { extractAnthropic, extractChatCompletions, extractCodexDesktop, extractGemini, extractKimi, extractOpenAI, snapshotForModel, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
 
 test("extracts OpenAI instructions and developer input", () => {
   expect(
@@ -64,6 +64,14 @@ test("extracts Gemini system instructions", () => {
 test("routes Codex Desktop requests by originator", () => {
   expect(snapshotForOpenAI("gpt-5.6-sol", "Codex Desktop")).toBe("codex-desktop.md");
   expect(snapshotForOpenAI("capture-model", "codex_exec")).toBe("codex.md");
+});
+
+test("routes added harness models to distinct snapshots", () => {
+  expect(snapshotForModel("capture-kilo-code", "fallback.md")).toBe("kilo-code-cli.md");
+  expect(snapshotForModel("capture-cline-cli", "fallback.md")).toBe("cline-cli.md");
+  expect(snapshotForModel("capture-cline-sdk", "fallback.md")).toBe("cline-sdk.md");
+  expect(snapshotForModel("capture-openclaw", "fallback.md")).toBe("openclaw.md");
+  expect(snapshotForModel("capture-hermes", "fallback.md")).toBe("hermes-agent.md");
 });
 
 test("normalizes Codex Desktop skill paths", () => {

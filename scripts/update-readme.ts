@@ -5,11 +5,16 @@ type HarnessMetadata = {
 
 type Metadata = {
   claude_code: HarnessMetadata;
+  cline_cli: HarnessMetadata;
+  cline_sdk: HarnessMetadata;
   codex: HarnessMetadata;
   codex_desktop: HarnessMetadata;
   gemini_cli: HarnessMetadata;
   grok_code_cli: HarnessMetadata;
+  hermes_agent: HarnessMetadata;
+  kilo_code_cli: HarnessMetadata;
   kimi_cli: HarnessMetadata;
+  openclaw: HarnessMetadata;
   opencode: HarnessMetadata;
   pi: HarnessMetadata;
   qwen_code: HarnessMetadata;
@@ -27,8 +32,13 @@ export function renderResults(metadata: Metadata): string {
     ["Codex CLI", metadata.codex, "prompts/codex.md"],
     ["Codex Desktop", metadata.codex_desktop, "prompts/codex-desktop.md"],
     ["Claude Code", metadata.claude_code, "prompts/claude-code.md"],
+    ["Cline CLI", metadata.cline_cli, "prompts/cline-cli.md"],
+    ["Cline SDK", metadata.cline_sdk, "prompts/cline-sdk.md"],
     ["Gemini CLI", metadata.gemini_cli, "prompts/gemini-cli.md"],
     ["OpenCode", metadata.opencode, "prompts/opencode.md"],
+    ["Kilo Code CLI", metadata.kilo_code_cli, "prompts/kilo-code-cli.md"],
+    ["OpenClaw", metadata.openclaw, "prompts/openclaw.md"],
+    ["Hermes Agent", metadata.hermes_agent, "prompts/hermes-agent.md"],
     ["Kimi CLI", metadata.kimi_cli, "prompts/kimi-cli.md"],
     ["Qwen Code", metadata.qwen_code, "prompts/qwen-code.md"],
     ["Grok Code CLI", metadata.grok_code_cli, "prompts/grok-code-cli.md"],

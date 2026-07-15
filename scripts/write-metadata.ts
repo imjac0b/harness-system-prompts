@@ -5,11 +5,16 @@ const outputDirectory = process.env.CAPTURE_OUTPUT_DIR ?? "prompts";
 type HarnessMetadata = { captured: boolean; version: string };
 const harnesses = {
   claude_code: ["claude-code.md", "CLAUDE_CODE_VERSION"],
+  cline_cli: ["cline-cli.md", "CLINE_CLI_VERSION"],
+  cline_sdk: ["cline-sdk.md", "CLINE_SDK_VERSION"],
   codex: ["codex.md", "CODEX_VERSION"],
   codex_desktop: ["codex-desktop.md", "CODEX_DESKTOP_VERSION"],
   gemini_cli: ["gemini-cli.md", "GEMINI_CLI_VERSION"],
   grok_code_cli: ["grok-code-cli.md", "GROK_CODE_CLI_VERSION"],
+  hermes_agent: ["hermes-agent.md", "HERMES_AGENT_VERSION"],
+  kilo_code_cli: ["kilo-code-cli.md", "KILO_CODE_CLI_VERSION"],
   kimi_cli: ["kimi-cli.md", "KIMI_CLI_VERSION"],
+  openclaw: ["openclaw.md", "OPENCLAW_VERSION"],
   opencode: ["opencode.md", "OPENCODE_VERSION"],
   pi: ["pi.md", "PI_VERSION"],
   qwen_code: ["qwen-code.md", "QWEN_CODE_VERSION"],
