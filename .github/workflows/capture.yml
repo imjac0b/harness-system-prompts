@@ -94,10 +94,12 @@ jobs:
         env:
           GEMINI_API_KEY: local-capture-only
           GEMINI_CLI_TRUST_WORKSPACE: "true"
+          GEMINI_TELEMETRY_ENABLED: "false"
           GOOGLE_GEMINI_BASE_URL: http://127.0.0.1:8787
           HOME: ${{ runner.temp }}/gemini-home
         run: |
-          mkdir -p "$HOME"
+          mkdir -p "$HOME/.gemini"
+          printf '%s\n' '{"security":{"auth":{"selectedType":"gemini-api-key"}}}' > "$HOME/.gemini/settings.json"
           gemini -p "Reply with the word captured." --model capture-gemini --output-format json
 
       - name: Capture OpenCode instructions
