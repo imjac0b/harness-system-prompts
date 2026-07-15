@@ -8,27 +8,27 @@
     "version": "codex-cli 0.144.4"
   },
   "gemini_cli": {
-    "captured": false,
-    "version": "unknown"
+    "captured": true,
+    "version": "0.50.0"
   },
   "grok_code_cli": {
-    "captured": false,
-    "version": "unknown"
+    "captured": true,
+    "version": "grok 0.2.101 (5bc4b5dfad)"
   },
   "kimi_cli": {
-    "captured": false,
-    "version": "unknown"
+    "captured": true,
+    "version": "kimi, version 1.48.0"
   },
   "opencode": {
-    "captured": false,
-    "version": "unknown"
+    "captured": true,
+    "version": "1.18.1"
   },
   "pi": {
-    "captured": false,
-    "version": "unknown"
+    "captured": true,
+    "version": "0.80.7"
   },
   "qwen_code": {
-    "captured": false,
-    "version": "unknown"
+    "captured": true,
+    "version": "0.19.10"
   }
 }
