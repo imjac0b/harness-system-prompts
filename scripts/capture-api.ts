@@ -77,6 +77,16 @@ export function extractChatCompletions(payload: JsonObject): Section[] {
   );
 }
 
+export function extractKimi(payload: JsonObject): Section[] {
+  return extractChatCompletions(payload).map(([label, content]) => [
+    label,
+    content.replace(
+      /(The current date and time in ISO format is `)\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})(`)/g,
+      "$1<CURRENT_DATE_TIME>$2",
+    ),
+  ]);
+}
+
 export function extractGemini(payload: JsonObject): Section[] {
   return uniqueSections([
     ["system instruction", textFrom(payload.systemInstruction ?? payload.system_instruction)],
@@ -241,7 +251,9 @@ export async function handleRequest(request: Request): Promise<Response> {
   }
   if (url.pathname.endsWith("/chat/completions")) {
     const model = String(payload.model ?? "capture-model");
-    await writeSnapshot(snapshotForModel(model, "openai-compatible.md"), extractChatCompletions(payload));
+    const filename = snapshotForModel(model, "openai-compatible.md");
+    const sections = filename === "kimi-cli.md" ? extractKimi(payload) : extractChatCompletions(payload);
+    await writeSnapshot(filename, sections);
     return chatCompletionsResponse(model, payload.stream === true);
   }
   if (url.pathname.includes(":generateContent") || url.pathname.includes(":streamGenerateContent")) {

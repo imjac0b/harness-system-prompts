@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { extractAnthropic, extractChatCompletions, extractCodexDesktop, extractGemini, extractOpenAI, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
+import { extractAnthropic, extractChatCompletions, extractCodexDesktop, extractGemini, extractKimi, extractOpenAI, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
 
 test("extracts OpenAI instructions and developer input", () => {
   expect(
@@ -39,6 +39,20 @@ test("extracts OpenAI-compatible system messages", () => {
     ["system 1", "base prompt"],
     ["developer 2", "repo prompt"],
   ]);
+});
+
+test("normalizes Kimi's current date and time", () => {
+  const prefix = "The current date and time in ISO format is `";
+  const suffix = "`. This is only a reference.";
+  const extractAt = (timestamp: string) => extractKimi({ messages: [
+    { role: "system", content: `${prefix}${timestamp}${suffix}` },
+  ] });
+  const expected: [string, string][] = [
+    ["system 1", `${prefix}<CURRENT_DATE_TIME>${suffix}`],
+  ];
+
+  expect(extractAt("2026-07-15T19:16:49.262327+00:00")).toEqual(expected);
+  expect(extractAt("2026-07-16T03:42:11.900001Z")).toEqual(expected);
 });
 
 test("extracts Gemini system instructions", () => {
