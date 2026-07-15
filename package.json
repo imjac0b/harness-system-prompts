@@ -6,6 +6,7 @@
   "scripts": {
     "capture-api": "bun run scripts/capture-api.ts",
     "metadata": "bun run scripts/write-metadata.ts",
+    "readme": "bun run scripts/update-readme.ts",
     "test": "bun test",
     "typecheck": "bunx tsc --noEmit"
   },

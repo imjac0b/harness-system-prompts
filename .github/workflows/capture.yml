@@ -42,7 +42,15 @@ jobs:
           cat "$RUNNER_TEMP/capture-api.log"
           exit 1
 
+      - name: Create clean harness sandbox
+        run: |
+          mkdir -p "$RUNNER_TEMP/harness-sandbox"
+          git -C "$RUNNER_TEMP/harness-sandbox" init --initial-branch=main
+          git -C "$RUNNER_TEMP/harness-sandbox" config user.name "Harness Capture"
+          git -C "$RUNNER_TEMP/harness-sandbox" config user.email "harness-capture@localhost"
+
       - name: Capture Codex instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
         env:
           CAPTURE_API_KEY: local-capture-only
           CODEX_HOME: ${{ runner.temp }}/codex-home
@@ -59,6 +67,7 @@ jobs:
             "Reply with the word captured."
 
       - name: Capture Claude Code instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
         env:
           ANTHROPIC_AUTH_TOKEN: local-capture-only
           ANTHROPIC_BASE_URL: http://127.0.0.1:8787
@@ -73,6 +82,7 @@ jobs:
       - name: Validate snapshots
         run: |
           bun run metadata
+          bun run readme
           bun test
           bun run typecheck
           test -s prompts/codex.md
@@ -80,7 +90,7 @@ jobs:
 
       - name: Commit changed snapshots
         run: |
-          git add prompts/codex.md prompts/claude-code.md prompts/metadata.json
+          git add README.md prompts/codex.md prompts/claude-code.md prompts/metadata.json
           if git diff --cached --quiet; then
             echo "Harness prompts are unchanged."
             exit 0

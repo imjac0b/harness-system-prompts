@@ -46,25 +46,22 @@ export function extractOpenAI(payload: JsonObject): Section[] {
 }
 
 export function extractAnthropic(payload: JsonObject): Section[] {
-  return uniqueSections([["system", textFrom(payload.system)]]);
+  const system = textFrom(payload.system).replace(/^x-anthropic-billing-header:.*(?:\r?\n)?/, "");
+  return uniqueSections([["system", system]]);
 }
 
 export async function writeSnapshot(
   filename: string,
-  harness: string,
   sections: Section[],
   directory = outputDirectory,
 ): Promise<void> {
   if (sections.length === 0) return;
-  const lines = [`# ${harness} instructions`, ""];
-  for (const [label, content] of sections) {
-    lines.push(`## ${label}`, "", content, "");
-  }
+  const content = sections.map(([, section]) => section).join("\n\n");
 
   await mkdir(directory, { recursive: true });
   const target = join(directory, filename);
   const temporary = `${target}.${crypto.randomUUID()}.tmp`;
-  await Bun.write(temporary, `${lines.join("\n").trimEnd()}\n`);
+  await Bun.write(temporary, `${content.trimEnd()}\n`);
   await rename(temporary, target);
 }
 
@@ -140,11 +137,11 @@ export async function handleRequest(request: Request): Promise<Response> {
 
   if (url.pathname.endsWith("/messages/count_tokens")) return Response.json({ input_tokens: 1 });
   if (url.pathname.endsWith("/messages")) {
-    await writeSnapshot("claude-code.md", "Claude Code", extractAnthropic(payload));
+    await writeSnapshot("claude-code.md", extractAnthropic(payload));
     return anthropicResponse(String(payload.model ?? "capture-model"));
   }
   if (url.pathname.endsWith("/responses")) {
-    await writeSnapshot("codex.md", "Codex", extractOpenAI(payload));
+    await writeSnapshot("codex.md", extractOpenAI(payload));
     return openAIResponse(String(payload.model ?? "capture-model"));
   }
   return Response.json({ error: "not found" }, { status: 404 });

@@ -1,29 +1,43 @@
 # harness-system-prompts
 
-Captures the system and developer instructions that Codex CLI and Claude Code send to explicitly configured, local API-compatible endpoints.
+Automatically captures and versions the system instructions sent by popular coding-agent harnesses to their model APIs.
 
-The Bun-powered GitHub Action installs the latest published CLI packages, starts a loopback-only capture server, runs one non-interactive request through each harness, and commits changed snapshots under `prompts/`. The committed metadata records the exact CLI versions used for each capture.
+The project uses a Bun-powered loopback server that implements the OpenAI Responses and Anthropic Messages API shapes. Each harness connects to this local server with dummy credentials, sends its assembled instructions, receives a minimal successful response, and exits. GitHub Actions commits each meaningful prompt or harness-version change.
 
-## Run it
+## Latest captures
 
-Open **Actions → Capture harness system prompts → Run workflow**. The scheduled job also runs every Monday at 03:17 UTC.
+<!-- harness-results:start -->
+| Harness | Version | Status | System prompt |
+| --- | --- | --- | --- |
+| Codex CLI | `codex-cli 0.144.4` | ✅ Captured | [View Markdown](prompts/codex.md) |
+| Claude Code | `2.1.210 (Claude Code)` | ✅ Captured | [View Markdown](prompts/claude-code.md) |
+<!-- harness-results:end -->
 
-The workflow uses dummy local credentials. It requires no OpenAI or Anthropic API key. Its `GITHUB_TOKEN` has `contents: write` permission so it can commit changed snapshots to the current default branch.
+## How captures stay reproducible
 
-## Files
+Each run creates an empty `main` Git repository under the runner's temporary directory with a deterministic Git identity. Codex CLI and Claude Code both run inside that clean sandbox, producing stable branch, status, and commit-history context. The snapshot writer stores raw instruction bodies, removes Claude Code's per-request billing header, and avoids generated headings or timestamps.
 
-- `scripts/capture-api.ts` implements the loopback OpenAI Responses and Anthropic Messages endpoints with `Bun.serve`.
-- `scripts/write-metadata.ts` records CLI versions and capture status.
-- `prompts/codex.md` contains Codex system/developer instructions.
-- `prompts/claude-code.md` contains Claude Code system instructions.
-- `prompts/metadata.json` identifies the harness versions used for the snapshots.
+## Run the capture
 
-Captured instructions remain the property of their respective authors. Review their terms before redistributing snapshot content.
+The workflow runs every Monday at 03:17 UTC and supports manual dispatch from **Actions → Capture harness system prompts → Run workflow**.
 
-## Local smoke test
+Fork maintainers can enable Actions and grant the workflow `contents: write` permission. The workflow's dummy credentials connect exclusively to its loopback capture server.
+
+## Local development
+
+Requirements: [Bun](https://bun.sh/) and Git.
 
 ```sh
 bun install
 bun test
 bun run typecheck
 ```
+
+Key files:
+
+- `scripts/capture-api.ts` — loopback OpenAI Responses and Anthropic Messages endpoints
+- `scripts/write-metadata.ts` — harness version and capture status metadata
+- `scripts/update-readme.ts` — generated results table
+- `.github/workflows/capture.yml` — scheduled capture and commit workflow
+
+Captured instructions remain the property of their respective authors. Review each provider's terms before redistribution or reuse.
