@@ -1,11 +1,11 @@
 {
   "agent_zero": {
-    "captured": false,
-    "version": "unknown"
+    "captured": true,
+    "version": "v2.4"
   },
   "aider": {
-    "captured": false,
-    "version": "unknown"
+    "captured": true,
+    "version": "aider 0.86.2"
   },
   "claude_code": {
     "captured": true,
@@ -28,8 +28,8 @@
     "version": "ChatGPT 26.707.72221 (codex-cli 0.144.2)"
   },
   "crush": {
-    "captured": false,
-    "version": "unknown"
+    "captured": true,
+    "version": "crush version v0.84.1"
   },
   "gemini_cli": {
     "captured": true,
@@ -52,24 +52,24 @@
     "version": "kimi, version 1.48.0"
   },
   "mimo_code": {
-    "captured": false,
-    "version": "unknown"
+    "captured": true,
+    "version": "0.1.6"
   },
   "omp": {
-    "captured": false,
-    "version": "unknown"
+    "captured": true,
+    "version": "omp/17.0.0"
   },
   "openclaw": {
     "captured": true,
     "version": "OpenClaw 2026.7.1 (2d2ddc4)"
   },
   "openhands": {
-    "captured": false,
-    "version": "unknown"
+    "captured": true,
+    "version": "OpenHands CLI 1.16.0"
   },
   "opensquilla": {
-    "captured": false,
-    "version": "unknown"
+    "captured": true,
+    "version": "0.5.0rc4"
   },
   "opencode": {
     "captured": true,

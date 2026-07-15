@@ -83,14 +83,18 @@ The current working directory is `/home/runner/work/_temp/harness-sandbox`. This
 The directory listing of current working directory is:
 
 ```
-└── .git/
-    ├── hooks/
-    ├── info/
-    ├── objects/
-    ├── refs/
-    ├── HEAD
-    ├── config
-    └── description
+├── .git/
+│   ├── hooks/
+│   ├── info/
+│   ├── objects/
+│   ├── refs/
+│   ├── HEAD
+│   ├── config
+│   ├── description
+│   └── mimocode-project-id
+└── .mimocode/
+    ├── .cron-lock
+    └── .gitignore
 ```
 
 Use this as your basic understanding of the project structure. The tree only shows the first two levels; entries marked "... and N more" indicate additional contents — use Glob or Shell to explore further.

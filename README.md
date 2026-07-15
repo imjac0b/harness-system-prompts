@@ -19,11 +19,11 @@ Automatically captures and versions system prompts from coding-agent harnesses.
 | Qwen Code | `0.19.10` | ✅ Captured | [View Markdown](prompts/qwen-code.md) |
 | Grok Code CLI | `grok 0.2.101 (5bc4b5dfad)` | ✅ Captured | [View Markdown](prompts/grok-code-cli.md) |
 | Pi | `0.80.7` | ✅ Captured | [View Markdown](prompts/pi.md) |
-| oh-my-pi | `unknown` | ⏳ Pending | [View Markdown](prompts/omp.md) |
-| OpenHands CLI | `unknown` | ⏳ Pending | [View Markdown](prompts/openhands.md) |
-| OpenSquilla | `unknown` | ⏳ Pending | [View Markdown](prompts/opensquilla.md) |
-| Agent Zero | `unknown` | ⏳ Pending | [View Markdown](prompts/agent-zero.md) |
-| MiMo Code | `unknown` | ⏳ Pending | [View Markdown](prompts/mimo-code.md) |
-| Crush | `unknown` | ⏳ Pending | [View Markdown](prompts/crush.md) |
-| Aider | `unknown` | ⏳ Pending | [View Markdown](prompts/aider.md) |
+| oh-my-pi | `omp/17.0.0` | ✅ Captured | [View Markdown](prompts/omp.md) |
+| OpenHands CLI | `OpenHands CLI 1.16.0` | ✅ Captured | [View Markdown](prompts/openhands.md) |
+| OpenSquilla | `0.5.0rc4` | ✅ Captured | [View Markdown](prompts/opensquilla.md) |
+| Agent Zero | `v2.4` | ✅ Captured | [View Markdown](prompts/agent-zero.md) |
+| MiMo Code | `0.1.6` | ✅ Captured | [View Markdown](prompts/mimo-code.md) |
+| Crush | `crush version v0.84.1` | ✅ Captured | [View Markdown](prompts/crush.md) |
+| Aider | `aider 0.86.2` | ✅ Captured | [View Markdown](prompts/aider.md) |
 <!-- harness-results:end -->
