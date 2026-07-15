@@ -1,0 +1,16 @@
+{
+  "name": "harness-system-prompts",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "capture-api": "bun run scripts/capture-api.ts",
+    "metadata": "bun run scripts/write-metadata.ts",
+    "test": "bun test",
+    "typecheck": "bunx tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "latest"
+  }
+}

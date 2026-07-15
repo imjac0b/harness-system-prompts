@@ -1,0 +1,95 @@
+name: Capture harness system prompts
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * 1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: capture-harness-system-prompts
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install project dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install harnesses
+        run: bun add --global @openai/codex@latest @anthropic-ai/claude-code@latest
+
+      - name: Start local capture APIs
+        run: |
+          bun run capture-api > "$RUNNER_TEMP/capture-api.log" 2>&1 &
+          echo "CAPTURE_API_PID=$!" >> "$GITHUB_ENV"
+          for attempt in {1..20}; do
+            curl --fail --silent http://127.0.0.1:8787/health && exit 0
+            sleep 0.25
+          done
+          cat "$RUNNER_TEMP/capture-api.log"
+          exit 1
+
+      - name: Capture Codex instructions
+        env:
+          CAPTURE_API_KEY: local-capture-only
+          CODEX_HOME: ${{ runner.temp }}/codex-home
+        run: |
+          mkdir -p "$CODEX_HOME"
+          codex exec --ephemeral --skip-git-repo-check \
+            -c 'model="capture-model"' \
+            -c 'model_provider="capture"' \
+            -c 'model_reasoning_effort="low"' \
+            -c 'model_providers.capture.name="Local capture API"' \
+            -c 'model_providers.capture.base_url="http://127.0.0.1:8787/v1"' \
+            -c 'model_providers.capture.env_key="CAPTURE_API_KEY"' \
+            -c 'model_providers.capture.wire_api="responses"' \
+            "Reply with the word captured."
+
+      - name: Capture Claude Code instructions
+        env:
+          ANTHROPIC_AUTH_TOKEN: local-capture-only
+          ANTHROPIC_BASE_URL: http://127.0.0.1:8787
+          CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
+        run: claude --print "Reply with the word captured." --model capture-model --max-turns 1 --no-session-persistence
+
+      - name: Record harness versions
+        run: |
+          echo "CODEX_VERSION=$(codex --version)" >> "$GITHUB_ENV"
+          echo "CLAUDE_CODE_VERSION=$(claude --version)" >> "$GITHUB_ENV"
+
+      - name: Validate snapshots
+        run: |
+          bun run metadata
+          bun test
+          bun run typecheck
+          test -s prompts/codex.md
+          test -s prompts/claude-code.md
+
+      - name: Commit changed snapshots
+        run: |
+          git add prompts/codex.md prompts/claude-code.md prompts/metadata.json
+          if git diff --cached --quiet; then
+            echo "Harness prompts are unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update harness system prompts"
+          git push
+
+      - name: Show capture API log on failure
+        if: failure()
+        run: cat "$RUNNER_TEMP/capture-api.log"
