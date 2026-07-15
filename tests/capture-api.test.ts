@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { extractAnthropic, extractChatCompletions, extractCodexDesktop, extractGemini, extractKimi, extractOpenAI, snapshotForModel, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
+import { extractAnthropic, extractChatCompletions, extractCline, extractCodexDesktop, extractGemini, extractHermes, extractKimi, extractOpenAI, snapshotForModel, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
 
 test("extracts OpenAI instructions and developer input", () => {
   expect(
@@ -53,6 +53,22 @@ test("normalizes Kimi's current date and time", () => {
 
   expect(extractAt("2026-07-15T19:16:49.262327+00:00")).toEqual(expected);
   expect(extractAt("2026-07-16T03:42:11.900001Z")).toEqual(expected);
+});
+
+test("normalizes Cline's current date", () => {
+  expect(extractCline({ messages: [
+    { role: "system", content: "<env>\n1. Platform: linux\n2. Date: 7/15/2026\n3. IDE: Terminal Shell\n</env>" },
+  ] })).toEqual([
+    ["system 1", "<env>\n1. Platform: linux\n2. Date: <CURRENT_DATE>\n3. IDE: Terminal Shell\n</env>"],
+  ]);
+});
+
+test("normalizes Hermes' conversation start date", () => {
+  expect(extractHermes({ messages: [
+    { role: "system", content: "Conversation started: Wednesday, July 15, 2026\nModel: capture-hermes" },
+  ] })).toEqual([
+    ["system 1", "Conversation started: <CURRENT_DATE>\nModel: capture-hermes"],
+  ]);
 });
 
 test("extracts Gemini system instructions", () => {

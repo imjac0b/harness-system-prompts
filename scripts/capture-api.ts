@@ -87,6 +87,20 @@ export function extractKimi(payload: JsonObject): Section[] {
   ]);
 }
 
+export function extractCline(payload: JsonObject): Section[] {
+  return extractChatCompletions(payload).map(([label, content]) => [
+    label,
+    content.replace(/^2\. Date: \d{1,2}\/\d{1,2}\/\d{4}$/gm, "2. Date: <CURRENT_DATE>"),
+  ]);
+}
+
+export function extractHermes(payload: JsonObject): Section[] {
+  return extractChatCompletions(payload).map(([label, content]) => [
+    label,
+    content.replace(/^Conversation started: .+$/gm, "Conversation started: <CURRENT_DATE>"),
+  ]);
+}
+
 export function extractGemini(payload: JsonObject): Section[] {
   return uniqueSections([
     ["system instruction", textFrom(payload.systemInstruction ?? payload.system_instruction)],
@@ -264,7 +278,13 @@ export async function handleRequest(request: Request): Promise<Response> {
   if (url.pathname.endsWith("/chat/completions")) {
     const model = String(payload.model ?? "capture-model");
     const filename = snapshotForModel(model, "openai-compatible.md");
-    const sections = filename === "kimi-cli.md" ? extractKimi(payload) : extractChatCompletions(payload);
+    const sections = filename === "kimi-cli.md"
+      ? extractKimi(payload)
+      : filename === "cline-cli.md" || filename === "cline-sdk.md"
+        ? extractCline(payload)
+        : filename === "hermes-agent.md"
+          ? extractHermes(payload)
+          : extractChatCompletions(payload);
     await writeSnapshot(filename, sections);
     return chatCompletionsResponse(model, payload.stream === true);
   }
