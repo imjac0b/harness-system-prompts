@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { extractAnthropic, extractChatCompletions, extractGemini, extractOpenAI, writeSnapshot } from "../scripts/capture-api";
+import { extractAnthropic, extractChatCompletions, extractCodexDesktop, extractGemini, extractOpenAI, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
 
 test("extracts OpenAI instructions and developer input", () => {
   expect(
@@ -44,6 +44,17 @@ test("extracts OpenAI-compatible system messages", () => {
 test("extracts Gemini system instructions", () => {
   expect(extractGemini({ systemInstruction: { parts: [{ text: "base prompt" }] } })).toEqual([
     ["system instruction", "base prompt"],
+  ]);
+});
+
+test("routes Codex Desktop requests by originator", () => {
+  expect(snapshotForOpenAI("gpt-5.6-sol", "Codex Desktop")).toBe("codex-desktop.md");
+  expect(snapshotForOpenAI("capture-model", "codex_exec")).toBe("codex.md");
+});
+
+test("normalizes Codex Desktop skill paths", () => {
+  expect(extractCodexDesktop({ instructions: "skill (file: /tmp/codex-home/skills/demo/SKILL.md)" })).toEqual([
+    ["instructions", "skill (file: $CODEX_HOME/skills/demo/SKILL.md)"],
   ]);
 });
 

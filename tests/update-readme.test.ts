@@ -4,6 +4,7 @@ import { renderResults, replaceResults } from "../scripts/update-readme";
 const metadata = {
   claude_code: { captured: true, version: "2.1.210 (Claude Code)" },
   codex: { captured: true, version: "codex-cli 0.144.4" },
+  codex_desktop: { captured: true, version: "ChatGPT 26.707.72221 (codex-cli 0.144.2)" },
   gemini_cli: { captured: false, version: "unknown" },
   grok_code_cli: { captured: false, version: "unknown" },
   kimi_cli: { captured: false, version: "unknown" },
@@ -15,6 +16,7 @@ const metadata = {
 test("renders linked harness results", () => {
   const table = renderResults(metadata);
   expect(table).toContain("| Codex CLI | `codex-cli 0.144.4` | ✅ Captured | [View Markdown](prompts/codex.md) |");
+  expect(table).toContain("| Codex Desktop | `ChatGPT 26.707.72221 (codex-cli 0.144.2)` | ✅ Captured | [View Markdown](prompts/codex-desktop.md) |");
   expect(table).toContain("| Claude Code | `2.1.210 (Claude Code)` | ✅ Captured | [View Markdown](prompts/claude-code.md) |");
   expect(table).toContain("| Gemini CLI | `unknown` | ⏳ Pending | [View Markdown](prompts/gemini-cli.md) |");
   expect(table).toContain("| Pi | `unknown` | ⏳ Pending | [View Markdown](prompts/pi.md) |");

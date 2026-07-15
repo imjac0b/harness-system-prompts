@@ -45,6 +45,13 @@ export function extractOpenAI(payload: JsonObject): Section[] {
   return uniqueSections(sections);
 }
 
+export function extractCodexDesktop(payload: JsonObject): Section[] {
+  return extractOpenAI(payload).map(([label, content]) => [
+    label,
+    content.replace(/\(file: [^)]+\/skills\//g, "(file: $CODEX_HOME/skills/"),
+  ]);
+}
+
 export function extractAnthropic(payload: JsonObject): Section[] {
   const system = textFrom(payload.system)
     .replace(/^x-anthropic-billing-header:\s*(.*)$/m, (_line, value: string) => {
@@ -87,6 +94,11 @@ const snapshotsByModel: Record<string, string> = {
 
 function snapshotForModel(model: unknown, fallback: string): string {
   return snapshotsByModel[String(model)] ?? fallback;
+}
+
+export function snapshotForOpenAI(model: unknown, originator: string | null): string {
+  if (originator?.toLowerCase() === "codex desktop") return "codex-desktop.md";
+  return snapshotForModel(model, "codex.md");
 }
 
 export async function writeSnapshot(
@@ -221,7 +233,10 @@ export async function handleRequest(request: Request): Promise<Response> {
   }
   if (url.pathname.endsWith("/responses")) {
     const model = String(payload.model ?? "capture-model");
-    await writeSnapshot(snapshotForModel(model, "codex.md"), extractOpenAI(payload));
+    const originator = request.headers.get("originator");
+    const filename = snapshotForOpenAI(model, originator);
+    const sections = filename === "codex-desktop.md" ? extractCodexDesktop(payload) : extractOpenAI(payload);
+    await writeSnapshot(filename, sections);
     return openAIResponse(model);
   }
   if (url.pathname.endsWith("/chat/completions")) {

@@ -6,6 +6,7 @@ Automatically captures and versions system prompts from coding-agent harnesses.
 | Harness | Version | Status | System prompt |
 | --- | --- | --- | --- |
 | Codex CLI | `codex-cli 0.144.4` | ✅ Captured | [View Markdown](prompts/codex.md) |
+| Codex Desktop | `ChatGPT 26.707.72221 (codex-cli 0.144.2)` | ✅ Captured | [View Markdown](prompts/codex-desktop.md) |
 | Claude Code | `2.1.210 (Claude Code)` | ✅ Captured | [View Markdown](prompts/claude-code.md) |
 | Gemini CLI | `0.50.0` | ✅ Captured | [View Markdown](prompts/gemini-cli.md) |
 | OpenCode | `1.18.1` | ✅ Captured | [View Markdown](prompts/opencode.md) |

@@ -6,6 +6,7 @@ type HarnessMetadata = {
 type Metadata = {
   claude_code: HarnessMetadata;
   codex: HarnessMetadata;
+  codex_desktop: HarnessMetadata;
   gemini_cli: HarnessMetadata;
   grok_code_cli: HarnessMetadata;
   kimi_cli: HarnessMetadata;
@@ -24,6 +25,7 @@ function cell(value: string): string {
 export function renderResults(metadata: Metadata): string {
   const rows = [
     ["Codex CLI", metadata.codex, "prompts/codex.md"],
+    ["Codex Desktop", metadata.codex_desktop, "prompts/codex-desktop.md"],
     ["Claude Code", metadata.claude_code, "prompts/claude-code.md"],
     ["Gemini CLI", metadata.gemini_cli, "prompts/gemini-cli.md"],
     ["OpenCode", metadata.opencode, "prompts/opencode.md"],

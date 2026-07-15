@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "capture-api": "bun run scripts/capture-api.ts",
+    "capture-codex-desktop": "bun run scripts/capture-codex-desktop.ts",
     "metadata": "bun run scripts/write-metadata.ts",
     "readme": "bun run scripts/update-readme.ts",
     "test": "bun test",

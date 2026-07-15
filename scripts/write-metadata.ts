@@ -6,6 +6,7 @@ type HarnessMetadata = { captured: boolean; version: string };
 const harnesses = {
   claude_code: ["claude-code.md", "CLAUDE_CODE_VERSION"],
   codex: ["codex.md", "CODEX_VERSION"],
+  codex_desktop: ["codex-desktop.md", "CODEX_DESKTOP_VERSION"],
   gemini_cli: ["gemini-cli.md", "GEMINI_CLI_VERSION"],
   grok_code_cli: ["grok-code-cli.md", "GROK_CODE_CLI_VERSION"],
   kimi_cli: ["kimi-cli.md", "KIMI_CLI_VERSION"],

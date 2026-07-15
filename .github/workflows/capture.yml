@@ -13,9 +13,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  capture:
+  capture-cli:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    outputs:
+      claude_code_version: ${{ steps.versions.outputs.claude_code }}
+      codex_version: ${{ steps.versions.outputs.codex }}
+      gemini_cli_version: ${{ steps.versions.outputs.gemini_cli }}
+      grok_code_cli_version: ${{ steps.versions.outputs.grok_code_cli }}
+      kimi_cli_version: ${{ steps.versions.outputs.kimi_cli }}
+      opencode_version: ${{ steps.versions.outputs.opencode }}
+      pi_version: ${{ steps.versions.outputs.pi }}
+      qwen_code_version: ${{ steps.versions.outputs.qwen_code }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -153,25 +162,164 @@ jobs:
           pi --provider capture --model capture-pi --no-session --print "Reply with the word captured."
 
       - name: Record harness versions
+        id: versions
         run: |
-          echo "CODEX_VERSION=$(codex --version)" >> "$GITHUB_ENV"
-          echo "CLAUDE_CODE_VERSION=$(claude --version)" >> "$GITHUB_ENV"
-          echo "GEMINI_CLI_VERSION=$(gemini --version)" >> "$GITHUB_ENV"
-          echo "OPENCODE_VERSION=$(opencode --version)" >> "$GITHUB_ENV"
-          echo "KIMI_CLI_VERSION=$(kimi --version)" >> "$GITHUB_ENV"
-          echo "QWEN_CODE_VERSION=$(qwen --version)" >> "$GITHUB_ENV"
-          echo "GROK_CODE_CLI_VERSION=$(grok version)" >> "$GITHUB_ENV"
-          echo "PI_VERSION=$(pi --version)" >> "$GITHUB_ENV"
+          echo "codex=$(codex --version)" >> "$GITHUB_OUTPUT"
+          echo "claude_code=$(claude --version)" >> "$GITHUB_OUTPUT"
+          echo "gemini_cli=$(gemini --version)" >> "$GITHUB_OUTPUT"
+          echo "opencode=$(opencode --version)" >> "$GITHUB_OUTPUT"
+          echo "kimi_cli=$(kimi --version)" >> "$GITHUB_OUTPUT"
+          echo "qwen_code=$(qwen --version)" >> "$GITHUB_OUTPUT"
+          echo "grok_code_cli=$(grok version)" >> "$GITHUB_OUTPUT"
+          echo "pi=$(pi --version)" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare CLI capture artifact
+        run: |
+          mkdir -p "$RUNNER_TEMP/cli-captures/prompts"
+          cp \
+            prompts/codex.md \
+            prompts/claude-code.md \
+            prompts/gemini-cli.md \
+            prompts/opencode.md \
+            prompts/kimi-cli.md \
+            prompts/qwen-code.md \
+            prompts/grok-code-cli.md \
+            prompts/pi.md \
+            "$RUNNER_TEMP/cli-captures/prompts/"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli-captures
+          path: ${{ runner.temp }}/cli-captures
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Show capture API log on failure
+        if: failure()
+        run: cat "$RUNNER_TEMP/capture-api.log"
+
+  capture-codex-desktop:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install project dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Download Codex Desktop
+        run: |
+          curl --fail --location --retry 3 \
+            https://persistent.oaistatic.com/codex-app-prod/Codex.dmg \
+            --output "$RUNNER_TEMP/Codex.dmg"
+          mkdir -p "$RUNNER_TEMP/codex-dmg"
+          hdiutil attach "$RUNNER_TEMP/Codex.dmg" \
+            -nobrowse \
+            -readonly \
+            -mountpoint "$RUNNER_TEMP/codex-dmg"
+          APP_PATH=$(find "$RUNNER_TEMP/codex-dmg" -maxdepth 1 -type d -name '*.app' -print -quit)
+          test -n "$APP_PATH"
+          echo "CODEX_DESKTOP_APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
+
+      - name: Start local capture API
+        run: |
+          bun run capture-api > "$RUNNER_TEMP/capture-api.log" 2>&1 &
+          echo "CAPTURE_API_PID=$!" >> "$GITHUB_ENV"
+          for attempt in {1..20}; do
+            curl --fail --silent http://127.0.0.1:8787/health && exit 0
+            sleep 0.25
+          done
+          cat "$RUNNER_TEMP/capture-api.log"
+          exit 1
+
+      - name: Create clean desktop sandbox
+        run: |
+          mkdir -p "$RUNNER_TEMP/desktop-sandbox"
+          git -C "$RUNNER_TEMP/desktop-sandbox" init --initial-branch=main
+          git -C "$RUNNER_TEMP/desktop-sandbox" config user.name "Harness Capture"
+          git -C "$RUNNER_TEMP/desktop-sandbox" config user.email "harness-capture@localhost"
+
+      - name: Capture Codex Desktop instructions
+        env:
+          CAPTURE_API_KEY: local-capture-only
+          CAPTURE_WORKSPACE: ${{ runner.temp }}/desktop-sandbox
+          CODEX_HOME: ${{ runner.temp }}/codex-desktop-home
+        run: bun run capture-codex-desktop
+
+      - name: Record Codex Desktop version
+        id: version
+        run: |
+          APP_NAME=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' "$CODEX_DESKTOP_APP_PATH/Contents/Info.plist")
+          APP_VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$CODEX_DESKTOP_APP_PATH/Contents/Info.plist")
+          CODEX_VERSION=$("$CODEX_DESKTOP_APP_PATH/Contents/Resources/codex" --version)
+          echo "version=$APP_NAME $APP_VERSION ($CODEX_VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare desktop capture artifact
+        run: |
+          mkdir -p "$RUNNER_TEMP/desktop-captures/prompts"
+          cp prompts/codex-desktop.md "$RUNNER_TEMP/desktop-captures/prompts/"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-captures
+          path: ${{ runner.temp }}/desktop-captures
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Show capture API log on failure
+        if: failure()
+        run: cat "$RUNNER_TEMP/capture-api.log"
+
+      - name: Detach Codex Desktop installer
+        if: always()
+        run: hdiutil detach "$RUNNER_TEMP/codex-dmg" || true
+
+  publish:
+    needs: [capture-cli, capture-codex-desktop]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install project dependencies
+        run: bun install --frozen-lockfile
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: .
+          merge-multiple: true
 
       - name: Validate snapshots
         env:
           REQUIRE_ALL_CAPTURES: "1"
+          CODEX_VERSION: ${{ needs.capture-cli.outputs.codex_version }}
+          CODEX_DESKTOP_VERSION: ${{ needs.capture-codex-desktop.outputs.version }}
+          CLAUDE_CODE_VERSION: ${{ needs.capture-cli.outputs.claude_code_version }}
+          GEMINI_CLI_VERSION: ${{ needs.capture-cli.outputs.gemini_cli_version }}
+          OPENCODE_VERSION: ${{ needs.capture-cli.outputs.opencode_version }}
+          KIMI_CLI_VERSION: ${{ needs.capture-cli.outputs.kimi_cli_version }}
+          QWEN_CODE_VERSION: ${{ needs.capture-cli.outputs.qwen_code_version }}
+          GROK_CODE_CLI_VERSION: ${{ needs.capture-cli.outputs.grok_code_cli_version }}
+          PI_VERSION: ${{ needs.capture-cli.outputs.pi_version }}
         run: |
           bun run metadata
           bun run readme
           bun test
           bun run typecheck
           test -s prompts/codex.md
+          test -s prompts/codex-desktop.md
           test -s prompts/claude-code.md
           test -s prompts/gemini-cli.md
           test -s prompts/opencode.md
@@ -191,7 +339,3 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Update harness system prompts"
           git push
-
-      - name: Show capture API log on failure
-        if: failure()
-        run: cat "$RUNNER_TEMP/capture-api.log"
