@@ -14,14 +14,14 @@ test("captures Codex Desktop on macOS and publishes one combined update", async 
   expect(workflow).toContain("runs-on: macos-latest");
   expect(workflow).toContain("https://persistent.oaistatic.com/codex-app-prod/Codex.dmg");
   expect(workflow).toContain("run: bun run capture-codex-desktop");
-  expect(workflow).toContain("needs: [capture-cli, capture-added-harnesses, capture-codex-desktop]");
+  expect(workflow).toContain("needs: [capture-cli, capture-codex-desktop]");
   expect(workflow).toContain("test -s prompts/codex-desktop.md");
 });
 
-test("captures added harnesses on an isolated GitHub runner", async () => {
+test("captures all CLI harnesses in one GitHub runner job", async () => {
   const workflow = await Bun.file(".github/workflows/capture.yml").text();
-  expect(workflow).toContain("capture-added-harnesses:");
-  expect(workflow).toContain("Install harnesses on the runner");
+  expect(workflow).toContain("capture-cli:");
+  expect(workflow).toContain("node-version: 24");
   expect(workflow).toContain("@kilocode/cli@latest");
   expect(workflow).toContain("cline@latest");
   expect(workflow).toContain("bun add @cline/sdk@latest");
@@ -33,4 +33,12 @@ test("captures added harnesses on an isolated GitHub runner", async () => {
   expect(workflow).toContain("test -s prompts/cline-sdk.md");
   expect(workflow).toContain("test -s prompts/openclaw.md");
   expect(workflow).toContain("test -s prompts/hermes-agent.md");
+  expect(workflow).toContain('echo "hermes_agent=${HERMES_VERSION%%$\'\\n\'*}" >> "$GITHUB_OUTPUT"');
+});
+
+test("runs captures on pushes, manual dispatches, and the weekly schedule", async () => {
+  const workflow = await Bun.file(".github/workflows/capture.yml").text();
+  expect(workflow).toContain("  push:");
+  expect(workflow).toContain("  workflow_dispatch:");
+  expect(workflow).toContain('cron: "17 3 * * 1"');
 });

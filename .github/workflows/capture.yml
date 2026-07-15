@@ -1,6 +1,7 @@
 name: Capture harness system prompts
 
 on:
+  push:
   workflow_dispatch:
   schedule:
     - cron: "17 3 * * 1"
@@ -15,14 +16,19 @@ concurrency:
 jobs:
   capture-cli:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     outputs:
       claude_code_version: ${{ steps.versions.outputs.claude_code }}
+      cline_cli_version: ${{ steps.versions.outputs.cline_cli }}
+      cline_sdk_version: ${{ steps.versions.outputs.cline_sdk }}
       codex_version: ${{ steps.versions.outputs.codex }}
       gemini_cli_version: ${{ steps.versions.outputs.gemini_cli }}
       grok_code_cli_version: ${{ steps.versions.outputs.grok_code_cli }}
+      hermes_agent_version: ${{ steps.versions.outputs.hermes_agent }}
+      kilo_code_cli_version: ${{ steps.versions.outputs.kilo_code_cli }}
       kimi_cli_version: ${{ steps.versions.outputs.kimi_cli }}
       opencode_version: ${{ steps.versions.outputs.opencode }}
+      openclaw_version: ${{ steps.versions.outputs.openclaw }}
       pi_version: ${{ steps.versions.outputs.pi }}
       qwen_code_version: ${{ steps.versions.outputs.qwen_code }}
     steps:
@@ -36,7 +42,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - uses: astral-sh/setup-uv@v6
 
@@ -49,11 +55,20 @@ jobs:
             @anthropic-ai/claude-code@latest \
             @earendil-works/pi-coding-agent@latest \
             @google/gemini-cli@latest \
+            @kilocode/cli@latest \
             @openai/codex@latest \
             @qwen-code/qwen-code@latest \
             @xai-official/grok@latest \
+            cline@latest \
+            openclaw@latest \
             opencode-ai@latest
           uv tool install --python 3.13 kimi-cli
+          uv tool install --python 3.13 hermes-agent
+          mkdir -p "$RUNNER_TEMP/cline-sdk-runner"
+          cp scripts/capture-cline-sdk.ts "$RUNNER_TEMP/cline-sdk-runner/"
+          cd "$RUNNER_TEMP/cline-sdk-runner"
+          bun init -y
+          bun add @cline/sdk@latest
 
       - name: Start local capture APIs
         run: |
@@ -161,101 +176,6 @@ jobs:
           printf '%s\n' '{"providers":{"capture":{"baseUrl":"http://127.0.0.1:8787/v1","api":"openai-completions","apiKey":"local-capture-only","models":[{"id":"capture-pi","name":"Capture Pi"}]}}}' > "$HOME/.pi/agent/models.json"
           pi --provider capture --model capture-pi --no-session --print "Reply with the word captured."
 
-      - name: Record harness versions
-        id: versions
-        run: |
-          echo "codex=$(codex --version)" >> "$GITHUB_OUTPUT"
-          echo "claude_code=$(claude --version)" >> "$GITHUB_OUTPUT"
-          echo "gemini_cli=$(gemini --version)" >> "$GITHUB_OUTPUT"
-          echo "opencode=$(opencode --version)" >> "$GITHUB_OUTPUT"
-          echo "kimi_cli=$(kimi --version)" >> "$GITHUB_OUTPUT"
-          echo "qwen_code=$(qwen --version)" >> "$GITHUB_OUTPUT"
-          echo "grok_code_cli=$(grok version)" >> "$GITHUB_OUTPUT"
-          echo "pi=$(pi --version)" >> "$GITHUB_OUTPUT"
-
-      - name: Prepare CLI capture artifact
-        run: |
-          mkdir -p "$RUNNER_TEMP/cli-captures/prompts"
-          cp \
-            prompts/codex.md \
-            prompts/claude-code.md \
-            prompts/gemini-cli.md \
-            prompts/opencode.md \
-            prompts/kimi-cli.md \
-            prompts/qwen-code.md \
-            prompts/grok-code-cli.md \
-            prompts/pi.md \
-            "$RUNNER_TEMP/cli-captures/prompts/"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: cli-captures
-          path: ${{ runner.temp }}/cli-captures
-          if-no-files-found: error
-          retention-days: 1
-
-      - name: Show capture API log on failure
-        if: failure()
-        run: cat "$RUNNER_TEMP/capture-api.log"
-
-  capture-added-harnesses:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    outputs:
-      cline_cli_version: ${{ steps.versions.outputs.cline_cli }}
-      cline_sdk_version: ${{ steps.versions.outputs.cline_sdk }}
-      hermes_agent_version: ${{ steps.versions.outputs.hermes_agent }}
-      kilo_code_cli_version: ${{ steps.versions.outputs.kilo_code_cli }}
-      openclaw_version: ${{ steps.versions.outputs.openclaw }}
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-
-      - uses: astral-sh/setup-uv@v6
-
-      - name: Install project dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Install harnesses on the runner
-        run: |
-          bun add --global \
-            @kilocode/cli@latest \
-            cline@latest \
-            openclaw@latest
-          uv tool install --python 3.13 hermes-agent
-          mkdir -p "$RUNNER_TEMP/cline-sdk-runner"
-          cp scripts/capture-cline-sdk.ts "$RUNNER_TEMP/cline-sdk-runner/"
-          cd "$RUNNER_TEMP/cline-sdk-runner"
-          bun init -y
-          bun add @cline/sdk@latest
-
-      - name: Start local capture API
-        run: |
-          bun run capture-api > "$RUNNER_TEMP/capture-api-added.log" 2>&1 &
-          echo "CAPTURE_API_ADDED_PID=$!" >> "$GITHUB_ENV"
-          for attempt in {1..20}; do
-            curl --fail --silent http://127.0.0.1:8787/health && exit 0
-            sleep 0.25
-          done
-          cat "$RUNNER_TEMP/capture-api-added.log"
-          exit 1
-
-      - name: Create clean harness sandbox
-        run: |
-          mkdir -p "$RUNNER_TEMP/harness-sandbox"
-          git -C "$RUNNER_TEMP/harness-sandbox" init --initial-branch=main
-          git -C "$RUNNER_TEMP/harness-sandbox" config user.name "Harness Capture"
-          git -C "$RUNNER_TEMP/harness-sandbox" config user.email "harness-capture@localhost"
-
       - name: Capture Kilo Code CLI instructions
         working-directory: ${{ runner.temp }}/harness-sandbox
         env:
@@ -337,34 +257,51 @@ jobs:
       - name: Record harness versions
         id: versions
         run: |
+          echo "codex=$(codex --version)" >> "$GITHUB_OUTPUT"
+          echo "claude_code=$(claude --version)" >> "$GITHUB_OUTPUT"
+          echo "gemini_cli=$(gemini --version)" >> "$GITHUB_OUTPUT"
+          echo "opencode=$(opencode --version)" >> "$GITHUB_OUTPUT"
+          echo "kimi_cli=$(kimi --version)" >> "$GITHUB_OUTPUT"
+          echo "qwen_code=$(qwen --version)" >> "$GITHUB_OUTPUT"
+          echo "grok_code_cli=$(grok version)" >> "$GITHUB_OUTPUT"
+          echo "pi=$(pi --version)" >> "$GITHUB_OUTPUT"
           echo "kilo_code_cli=$(kilo --version)" >> "$GITHUB_OUTPUT"
           echo "cline_cli=$(cline --version)" >> "$GITHUB_OUTPUT"
           CLINE_SDK_VERSION=$(node -p "require(process.env.RUNNER_TEMP + '/cline-sdk-runner/node_modules/@cline/sdk/package.json').version")
           echo "cline_sdk=$CLINE_SDK_VERSION" >> "$GITHUB_OUTPUT"
           echo "openclaw=$(openclaw --version)" >> "$GITHUB_OUTPUT"
-          echo "hermes_agent=$(hermes --version)" >> "$GITHUB_OUTPUT"
+          HERMES_VERSION=$(hermes --version)
+          echo "hermes_agent=${HERMES_VERSION%%$'\n'*}" >> "$GITHUB_OUTPUT"
 
-      - name: Prepare added harness capture artifact
+      - name: Prepare CLI capture artifact
         run: |
-          mkdir -p "$RUNNER_TEMP/added-captures/prompts"
+          mkdir -p "$RUNNER_TEMP/cli-captures/prompts"
           cp \
+            prompts/codex.md \
+            prompts/claude-code.md \
+            prompts/gemini-cli.md \
+            prompts/opencode.md \
+            prompts/kimi-cli.md \
+            prompts/qwen-code.md \
+            prompts/grok-code-cli.md \
+            prompts/pi.md \
             prompts/kilo-code-cli.md \
             prompts/cline-cli.md \
             prompts/cline-sdk.md \
             prompts/openclaw.md \
             prompts/hermes-agent.md \
-            "$RUNNER_TEMP/added-captures/prompts/"
+            "$RUNNER_TEMP/cli-captures/prompts/"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: added-harness-captures
-          path: ${{ runner.temp }}/added-captures
+          name: cli-captures
+          path: ${{ runner.temp }}/cli-captures
           if-no-files-found: error
           retention-days: 1
 
       - name: Show capture API log on failure
         if: failure()
-        run: cat "$RUNNER_TEMP/capture-api-added.log"
+        run: cat "$RUNNER_TEMP/capture-api.log"
 
   capture-codex-desktop:
     runs-on: macos-latest
@@ -449,7 +386,7 @@ jobs:
         run: hdiutil detach "$RUNNER_TEMP/codex-dmg" || true
 
   publish:
-    needs: [capture-cli, capture-added-harnesses, capture-codex-desktop]
+    needs: [capture-cli, capture-codex-desktop]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -475,13 +412,13 @@ jobs:
           CODEX_VERSION: ${{ needs.capture-cli.outputs.codex_version }}
           CODEX_DESKTOP_VERSION: ${{ needs.capture-codex-desktop.outputs.version }}
           CLAUDE_CODE_VERSION: ${{ needs.capture-cli.outputs.claude_code_version }}
-          CLINE_CLI_VERSION: ${{ needs.capture-added-harnesses.outputs.cline_cli_version }}
-          CLINE_SDK_VERSION: ${{ needs.capture-added-harnesses.outputs.cline_sdk_version }}
+          CLINE_CLI_VERSION: ${{ needs.capture-cli.outputs.cline_cli_version }}
+          CLINE_SDK_VERSION: ${{ needs.capture-cli.outputs.cline_sdk_version }}
           GEMINI_CLI_VERSION: ${{ needs.capture-cli.outputs.gemini_cli_version }}
-          HERMES_AGENT_VERSION: ${{ needs.capture-added-harnesses.outputs.hermes_agent_version }}
-          KILO_CODE_CLI_VERSION: ${{ needs.capture-added-harnesses.outputs.kilo_code_cli_version }}
+          HERMES_AGENT_VERSION: ${{ needs.capture-cli.outputs.hermes_agent_version }}
+          KILO_CODE_CLI_VERSION: ${{ needs.capture-cli.outputs.kilo_code_cli_version }}
           OPENCODE_VERSION: ${{ needs.capture-cli.outputs.opencode_version }}
-          OPENCLAW_VERSION: ${{ needs.capture-added-harnesses.outputs.openclaw_version }}
+          OPENCLAW_VERSION: ${{ needs.capture-cli.outputs.openclaw_version }}
           KIMI_CLI_VERSION: ${{ needs.capture-cli.outputs.kimi_cli_version }}
           QWEN_CODE_VERSION: ${{ needs.capture-cli.outputs.qwen_code_version }}
           GROK_CODE_CLI_VERSION: ${{ needs.capture-cli.outputs.grok_code_cli_version }}
