@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { extractAnthropic, extractChatCompletions, extractCline, extractCodexDesktop, extractGemini, extractHermes, extractKimi, extractOpenAI, extractOpenClaw, extractOpenHands, extractRunnerEnvironment, snapshotForModel, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
+import { extractAnthropic, extractChatCompletions, extractCline, extractCodexDesktop, extractGemini, extractHermes, extractKimi, extractMiMo, extractOmp, extractOpenAI, extractOpenClaw, extractOpenHands, extractRunnerEnvironment, snapshotForModel, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
 
 test("extracts OpenAI instructions and developer input", () => {
   expect(
@@ -92,6 +92,22 @@ test("normalizes runner paths and dates", () => {
     { role: "system", content: "<env>\n  Working directory: /tmp/work\n  Workspace root folder: /tmp/work\n  Today's date: Thu Jul 16 2026\n</env>" },
   ] })).toEqual([
     ["system 1", "<env>\n  Working directory: <WORKSPACE>\n  Workspace root folder: <WORKSPACE>\n  Today's date: <CURRENT_DATE>\n</env>"],
+  ]);
+});
+
+test("normalizes MiMo project and session identifiers", () => {
+  expect(extractMiMo({ messages: [
+    { role: "system", content: "Project: /tmp/memory/projects/a3044425-dbd5-4e3c-a305-a6d1371c09ad/MEMORY.md\nSession: /tmp/memory/sessions/ses_081c7e18bffesvRpE9j0Qb8iQa/checkpoint.md" },
+  ] })).toEqual([
+    ["system 1", "Project: /tmp/memory/projects/<PROJECT_ID>/MEMORY.md\nSession: /tmp/memory/sessions/<SESSION_ID>/checkpoint.md"],
+  ]);
+});
+
+test("normalizes oh-my-pi runner identity", () => {
+  expect(extractOmp({ messages: [
+    { role: "system", content: "<workstation>\n- OS: linux 6.17.0-1020-azure\n- Kernel: #20~24.04.1-Ubuntu SMP Fri Jun 19 20:09:14 UTC 2026\n- CPU: AMD EPYC 7763 64-Core Processor\n</workstation>\nToday is 2026-07-20, and the current working directory is '/tmp/work'." },
+  ] })).toEqual([
+    ["system 1", "<workstation>\n- OS: <OS_VERSION>\n- Kernel: <KERNEL_VERSION>\n- CPU: <CPU_MODEL>\n</workstation>\nToday is <CURRENT_DATE>, and the current working directory is '<WORKSPACE>'."],
   ]);
 });
 

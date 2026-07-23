@@ -136,6 +136,29 @@ export function extractRunnerEnvironment(payload: JsonObject): Section[] {
   ]);
 }
 
+export function extractMiMo(payload: JsonObject): Section[] {
+  return extractRunnerEnvironment(payload).map(([label, content]) => [
+    label,
+    content
+      .replace(/(\/memory\/projects\/)[0-9a-f-]{36}(?=\/)/g, "$1<PROJECT_ID>")
+      .replace(/(\/memory\/sessions\/)ses_[A-Za-z0-9]+(?=\/)/g, "$1<SESSION_ID>"),
+  ]);
+}
+
+export function extractOmp(payload: JsonObject): Section[] {
+  return extractChatCompletions(payload).map(([label, content]) => [
+    label,
+    content
+      .replace(/^(- OS:)\s*.+$/gm, "$1 <OS_VERSION>")
+      .replace(/^(- Kernel:)\s*.+$/gm, "$1 <KERNEL_VERSION>")
+      .replace(/^(- CPU:)\s*.+$/gm, "$1 <CPU_MODEL>")
+      .replace(
+        /^Today is \d{4}-\d{2}-\d{2}, and the current working directory is '.+'\.$/gm,
+        "Today is <CURRENT_DATE>, and the current working directory is '<WORKSPACE>'.",
+      ),
+  ]);
+}
+
 export function extractGemini(payload: JsonObject): Section[] {
   return uniqueSections([
     ["system instruction", textFrom(payload.systemInstruction ?? payload.system_instruction)],
@@ -324,7 +347,11 @@ export async function handleRequest(request: Request): Promise<Response> {
       ? extractKimi(payload)
       : filename === "openhands.md"
         ? extractOpenHands(payload)
-        : filename === "crush.md" || filename === "mimo-code.md" || filename === "opensquilla.md"
+        : filename === "mimo-code.md"
+          ? extractMiMo(payload)
+          : filename === "omp.md"
+            ? extractOmp(payload)
+            : filename === "crush.md" || filename === "opensquilla.md" || filename === "opencode.md" || filename === "kilo-code-cli.md"
           ? extractRunnerEnvironment(payload)
           : filename === "cline-cli.md" || filename === "cline-sdk.md"
             ? extractCline(payload)

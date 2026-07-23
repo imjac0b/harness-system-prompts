@@ -114,7 +114,7 @@ Here is some useful information about the environment you are running in:
 <env>
   Is directory a git repo: yes
   Platform: linux
-  Today's date: Mon Jul 20 2026
+  Today's date: <CURRENT_DATE>
   Project config: .kilo/command/*.md, .kilo/agent/*.md, kilo.json, AGENTS.md. Put new commands and agents in .kilo/. Do not use .kilocode/ or .opencode/.
   Global config: /home/runner/work/_temp/kilo-config/kilo/ (same structure)
 </env>

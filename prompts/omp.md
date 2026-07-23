@@ -738,14 +738,14 @@ PROJECT
 ===================================
 
 <workstation>
-- OS: linux 6.17.0-1020-azure
+- OS: <OS_VERSION>
 - Distro: Linux
-- Kernel: #20~24.04.1-Ubuntu SMP Fri Jun 19 20:09:14 UTC 2026
+- Kernel: <KERNEL_VERSION>
 - Arch: x64
-- CPU: AMD EPYC 7763 64-Core Processor
+- CPU: <CPU_MODEL>
 - Model: capture/capture-omp
 </workstation>
-Today is 2026-07-20, and the current working directory is '/home/runner/work/_temp/harness-sandbox'.
+Today is <CURRENT_DATE>, and the current working directory is '<WORKSPACE>'.
 
 <critical>
 - Each response MUST advance the task. There is no stopping condition other than completion.

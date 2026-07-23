@@ -97,11 +97,11 @@ assistant: Clients are marked as failed in the `connectToServer` function in src
 You are powered by the model named capture-opencode. The exact model ID is capture/capture-opencode
 Here is some useful information about the environment you are running in:
 <env>
-  Working directory: /home/runner/work/_temp/harness-sandbox
-  Workspace root folder: /home/runner/work/_temp/harness-sandbox
+  Working directory: <WORKSPACE>
+  Workspace root folder: <WORKSPACE>
   Is directory a git repo: yes
   Platform: linux
-  Today's date: Mon Jul 20 2026
+  Today's date: <CURRENT_DATE>
 </env>
 Skills provide specialized instructions and workflows for specific tasks.
 Use the skill tool to load a skill when a task matches its description.
