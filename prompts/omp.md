@@ -45,6 +45,7 @@ Special URLs for internal resources; with most FS/bash tools they auto-resolve t
 - Task: `task`
 - Hub: `hub`
 - Todo: `todo`
+- Web Search: `web_search`
 - Write: `write`
 
 # xd:// Tool Devices
@@ -520,53 +521,6 @@ Drives real Chromium tab; full puppeteer access via JS.
 }
 ```
 Execute by writing JSON to xd://browser.
-
-## web_search — Web Search
-
-Searches the web for up-to-date information beyond knowledge cutoff.
-
-<instruction>
-- You SHOULD prefer primary sources (papers, official docs) and corroborate key claims with multiple sources
-- You MUST include links for cited sources in the final response
-</instruction>
-
-### Schema
-```json
-{
- "type": "object",
- "properties": {
-  "query": {
-   "type": "string"
-  },
-  "recency": {
-   "enum": [
-    "day",
-    "month",
-    "week",
-    "year"
-   ],
-   "type": "string"
-  },
-  "limit": {
-   "type": "number"
-  },
-  "max_tokens": {
-   "type": "number"
-  },
-  "temperature": {
-   "type": "number"
-  },
-  "num_search_results": {
-   "type": "number"
-  }
- },
- "required": [
-  "query"
- ],
- "additionalProperties": false
-}
-```
-Execute by writing JSON to xd://web_search.
 
 TOOL POLICY
 ==============

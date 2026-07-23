@@ -187,6 +187,11 @@ Never attempt to analyze an image's visual content yourself. If a task needs ima
 No vision-capable model is currently configured. Ask the user to configure a vision model, or use an OCR tool to extract text.
 If instead you need a file's raw binary structure (not its visual content), use a shell tool such as `hexdump -C <path>`, NOT the read tool.
 Skills provide specialized instructions and workflows for specific tasks.
+On the first user query in a session, when the task might benefit from a specialized workflow, call skill_search to find the best matching non-Compose skill.
+Rewrite the user's request into a concise Skill Query with these dimensions when available: action, input, output, audience.
+Preserve an explicitly mentioned skill ID, name, or alias verbatim in the Skill Query so exact matching can take priority over BM25.
+If skill_search returns a loaded_skill_id, follow the loaded instructions. If it returns uncertain candidates, choose the best fit or continue without a skill. If it returns no_match, continue normally.
+Compose skills are not searchable; load an explicitly requested Compose skill directly with the skill tool.
 Use the skill tool to load a skill when a task matches its description.
 No skills are currently available.
 
