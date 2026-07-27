@@ -47,13 +47,12 @@ Special URLs for internal resources; with most FS/bash tools they auto-resolve t
 - Todo: `todo`
 - Web Search: `web_search`
 - Write: `write`
-
 # xd:// Tool Devices
 Additional tools are mounted as virtual devices, executed by writing a JSON args object as `content` to `xd://<tool>` via `write`.
 Invalid args return the schema in the error — fix and retry
 ## ast_edit — AST Edit
 
-Structural AST-aware rewrites via ast-grep. Use for codemods where text replace is unsafe. Narrow each call to one language.
+Structural AST-aware rewrites via ast-grep. Use for codemods where text replace is unsafe. Mixed-language paths are fine: each file is parsed in its own language, and a pattern only rewrites files it parses in.
 
 - Metavariables in `pat` (`$A`, `$$$ARGS`) substitute into `out`.
 - **Patterns match AST structure, not text.** `$NAME` = one node; `$_` = unbound; `$$$NAME` = zero-or-more.
@@ -62,6 +61,7 @@ Structural AST-aware rewrites via ast-grep. Use for codemods where text replace 
 - Rewrite patterns MUST parse as single AST node. Non-standalone → wrap: `class $_ { … }`.
 - TS: tolerate annotations — `async function $NAME($$$ARGS): $_ { $$$BODY }`. Delete with empty `out`: `{"pat":"console.log($$$)","out":""}`.
 - 1:1 substitution — no splitting/merging captures.
+- Matches are STAGED as a proposal, not applied: finalize by writing a one-sentence reason to `xd://resolve` (apply) or `xd://reject` (discard).
 - Parse issues → malformed rewrite, not clean no-op. For one-off text edits, prefer the Edit tool.
 
 ### Schema
