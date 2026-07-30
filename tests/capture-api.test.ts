@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { extractAnthropic, extractChatCompletions, extractCline, extractCodexDesktop, extractGemini, extractHermes, extractKimi, extractMiMo, extractOmp, extractOpenAI, extractOpenClaw, extractOpenHands, extractRunnerEnvironment, snapshotForModel, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
+import { extractAnthropic, extractChatCompletions, extractCline, extractCodexDesktop, extractCrush, extractGemini, extractHermes, extractKimi, extractMiMo, extractOmp, extractOpenAI, extractOpenClaw, extractOpenHands, extractRunnerEnvironment, snapshotForModel, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
 
 test("extracts OpenAI instructions and developer input", () => {
   expect(
@@ -92,6 +92,20 @@ test("normalizes runner paths and dates", () => {
     { role: "system", content: "<env>\n  Working directory: /tmp/work\n  Workspace root folder: /tmp/work\n  Today's date: Thu Jul 16 2026\n</env>" },
   ] })).toEqual([
     ["system 1", "<env>\n  Working directory: <WORKSPACE>\n  Workspace root folder: <WORKSPACE>\n  Today's date: <CURRENT_DATE>\n</env>"],
+  ]);
+});
+
+test("ignores Crush title generation and extracts the agent prompt", () => {
+  expect(extractCrush({ messages: [
+    { role: "system", content: "You will generate a short title based on the first message a user begins a conversation with.\n\n<rules>title rules</rules>" },
+    { role: "user", content: "Generate a concise title for the following content:\n\nReply with the word captured." },
+  ] })).toEqual([]);
+
+  expect(extractCrush({ messages: [
+    { role: "system", content: "You are Crush.\n\nWorking directory: /tmp/work" },
+    { role: "user", content: "Reply with the word captured." },
+  ] })).toEqual([
+    ["system 1", "You are Crush.\n\nWorking directory: <WORKSPACE>"],
   ]);
 });
 

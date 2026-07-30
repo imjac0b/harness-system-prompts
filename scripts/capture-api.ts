@@ -136,6 +136,14 @@ export function extractRunnerEnvironment(payload: JsonObject): Section[] {
   ]);
 }
 
+export function extractCrush(payload: JsonObject): Section[] {
+  const titlePromptPrefix = "You will generate a short title based on the first message a user begins a conversation with.";
+  const isTitleGeneration = extractChatCompletions(payload).some(([, content]) =>
+    content.startsWith(titlePromptPrefix)
+  );
+  return isTitleGeneration ? [] : extractRunnerEnvironment(payload);
+}
+
 export function extractMiMo(payload: JsonObject): Section[] {
   return extractRunnerEnvironment(payload).map(([label, content]) => [
     label,
@@ -351,15 +359,17 @@ export async function handleRequest(request: Request): Promise<Response> {
           ? extractMiMo(payload)
           : filename === "omp.md"
             ? extractOmp(payload)
-            : filename === "crush.md" || filename === "opensquilla.md" || filename === "opencode.md" || filename === "kilo-code-cli.md"
-          ? extractRunnerEnvironment(payload)
-          : filename === "cline-cli.md" || filename === "cline-sdk.md"
-            ? extractCline(payload)
-            : filename === "hermes-agent.md"
-              ? extractHermes(payload)
-              : filename === "openclaw.md"
-                ? extractOpenClaw(payload)
-                : extractChatCompletions(payload);
+            : filename === "crush.md"
+              ? extractCrush(payload)
+              : filename === "opensquilla.md" || filename === "opencode.md" || filename === "kilo-code-cli.md"
+                ? extractRunnerEnvironment(payload)
+                : filename === "cline-cli.md" || filename === "cline-sdk.md"
+                  ? extractCline(payload)
+                  : filename === "hermes-agent.md"
+                    ? extractHermes(payload)
+                    : filename === "openclaw.md"
+                      ? extractOpenClaw(payload)
+                      : extractChatCompletions(payload);
     await writeSnapshot(filename, sections);
     return chatCompletionsResponse(model, payload.stream === true);
   }
