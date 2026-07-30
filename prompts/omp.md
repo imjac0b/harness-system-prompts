@@ -65,49 +65,18 @@ Structural AST-aware rewrites via ast-grep. Use for codemods where text replace 
 - Parse issues → malformed rewrite, not clean no-op. For one-off text edits, prefer the Edit tool.
 
 ### Schema
-```json
-{
- "type": "object",
- "properties": {
-  "ops": {
-   "type": "array",
-   "description": "rewrite ops",
-   "minItems": 1,
-   "items": {
-    "type": "object",
-    "properties": {
-     "pat": {
-      "type": "string",
-      "description": "ast pattern"
-     },
-     "out": {
-      "type": "string",
-      "description": "replacement template"
-     }
-    },
-    "required": [
-     "pat",
-     "out"
-    ],
-    "additionalProperties": false
-   }
-  },
-  "paths": {
-   "type": "array",
-   "description": "files, directories, globs, or internal URLs to rewrite",
-   "minItems": 1,
-   "items": {
-    "type": "string",
-    "description": "file, directory, glob, or internal URL to rewrite"
-   }
-  }
- },
- "required": [
-  "ops",
-  "paths"
- ],
- "additionalProperties": false
-}
+```ts
+type Args = {
+  /** rewrite ops */
+  ops: Array<{
+    /** ast pattern */
+    pat: string;
+    /** replacement template */
+    out: string;
+  }>;
+  /** files, directories, globs, or internal URLs to rewrite */
+  paths: string[];
+};
 ```
 Execute by writing JSON to xd://ast_edit.
 
@@ -118,186 +87,68 @@ Only one active session at a time. `program` is a target path, not a shell comma
 Directories need a directory-capable adapter (e.g. `dlv`).
 
 ### Schema
-```json
-{
- "type": "object",
- "properties": {
-  "action": {
-   "enum": [
-    "attach",
-    "continue",
-    "custom_request",
-    "data_breakpoint_info",
-    "disassemble",
-    "evaluate",
-    "launch",
-    "loaded_sources",
-    "modules",
-    "output",
-    "pause",
-    "read_memory",
-    "remove_breakpoint",
-    "remove_data_breakpoint",
-    "remove_instruction_breakpoint",
-    "scopes",
-    "sessions",
-    "set_breakpoint",
-    "set_data_breakpoint",
-    "set_instruction_breakpoint",
-    "stack_trace",
-    "step_in",
-    "step_out",
-    "step_over",
-    "terminate",
-    "threads",
-    "variables",
-    "write_memory"
-   ],
-   "type": "string"
-  },
-  "program": {
-   "type": "string",
-   "description": "debug target path; Delve accepts Go package directories"
-  },
-  "args": {
-   "type": "array",
-   "description": "program arguments",
-   "items": {
-    "type": "string"
-   }
-  },
-  "adapter": {
-   "type": "string",
-   "description": "configured adapter id (gdb, lldb-dap, debugpy, dlv, rdbg, or dap.json entry)"
-  },
-  "cwd": {
-   "type": "string"
-  },
-  "file": {
-   "type": "string",
-   "description": "source file"
-  },
-  "line": {
-   "type": "number",
-   "description": "source line"
-  },
-  "function": {
-   "type": "string",
-   "description": "function name"
-  },
-  "name": {
-   "type": "string",
-   "description": "variable or data name"
-  },
-  "condition": {
-   "type": "string",
-   "description": "breakpoint condition"
-  },
-  "hit_condition": {
-   "type": "string"
-  },
-  "expression": {
-   "type": "string",
-   "description": "expression to evaluate"
-  },
-  "context": {
-   "type": "string",
-   "description": "evaluate context: watch | repl | hover | variables | clipboard"
-  },
-  "frame_id": {
-   "type": "number"
-  },
-  "scope_id": {
-   "type": "number",
-   "description": "scope variables reference"
-  },
-  "variable_ref": {
-   "type": "number",
-   "description": "variable reference"
-  },
-  "pid": {
-   "type": "number",
-   "description": "process id for attach"
-  },
-  "port": {
-   "type": "number",
-   "description": "remote attach port"
-  },
-  "host": {
-   "type": "string",
-   "description": "remote attach host"
-  },
-  "levels": {
-   "type": "number",
-   "description": "max stack frames"
-  },
-  "memory_reference": {
-   "type": "string",
-   "description": "memory reference or address"
-  },
-  "instruction_reference": {
-   "type": "string"
-  },
-  "instruction_count": {
-   "type": "number"
-  },
-  "instruction_offset": {
-   "type": "number"
-  },
-  "count": {
-   "type": "number",
-   "description": "bytes to read"
-  },
-  "data": {
-   "type": "string",
-   "description": "base64 memory payload"
-  },
-  "data_id": {
-   "type": "string",
-   "description": "data breakpoint id"
-  },
-  "access_type": {
-   "enum": [
-    "read",
-    "readWrite",
-    "write"
-   ],
-   "type": "string"
-  },
-  "command": {
-   "type": "string",
-   "description": "custom dap request command"
-  },
-  "arguments": {
-   "type": "object",
-   "description": "custom request arguments",
-   "additionalProperties": true
-  },
-  "offset": {
-   "type": "number"
-  },
-  "resolve_symbols": {
-   "type": "boolean"
-  },
-  "allow_partial": {
-   "type": "boolean"
-  },
-  "start_module": {
-   "type": "number"
-  },
-  "module_count": {
-   "type": "number"
-  },
-  "timeout": {
-   "type": "number",
-   "description": "per-request timeout seconds"
-  }
- },
- "required": [
-  "action"
- ],
- "additionalProperties": false
-}
+```ts
+type Args = {
+  action: "attach" | "continue" | "custom_request" | "data_breakpoint_info" | "disassemble" | "evaluate" | "launch" | "loaded_sources" | "modules" | "output" | "pause" | "read_memory" | "remove_breakpoint" | "remove_data_breakpoint" | "remove_instruction_breakpoint" | "scopes" | "sessions" | "set_breakpoint" | "set_data_breakpoint" | "set_instruction_breakpoint" | "stack_trace" | "step_in" | "step_out" | "step_over" | "terminate" | "threads" | "variables" | "write_memory";
+  /** debug target path; Delve accepts Go package directories */
+  program?: string;
+  /** program arguments */
+  args?: string[];
+  /** configured adapter id (gdb, lldb-dap, debugpy, dlv, rdbg, or dap.json entry) */
+  adapter?: string;
+  cwd?: string;
+  /** source file */
+  file?: string;
+  /** source line */
+  line?: number;
+  /** function name */
+  function?: string;
+  /** variable or data name */
+  name?: string;
+  /** breakpoint condition */
+  condition?: string;
+  hit_condition?: string;
+  /** expression to evaluate */
+  expression?: string;
+  /** evaluate context: watch | repl | hover | variables | clipboard */
+  context?: string;
+  frame_id?: number;
+  /** scope variables reference */
+  scope_id?: number;
+  /** variable reference */
+  variable_ref?: number;
+  /** process id for attach */
+  pid?: number;
+  /** remote attach port */
+  port?: number;
+  /** remote attach host */
+  host?: string;
+  /** max stack frames */
+  levels?: number;
+  /** memory reference or address */
+  memory_reference?: string;
+  instruction_reference?: string;
+  instruction_count?: number;
+  instruction_offset?: number;
+  /** bytes to read */
+  count?: number;
+  /** base64 memory payload */
+  data?: string;
+  /** data breakpoint id */
+  data_id?: string;
+  access_type?: "read" | "readWrite" | "write";
+  /** custom dap request command */
+  command?: string;
+  /** custom request arguments */
+  arguments?: Record<string, unknown>;
+  offset?: number;
+  resolve_symbols?: boolean;
+  allow_partial?: boolean;
+  start_module?: number;
+  module_count?: number;
+  /** per-request timeout seconds */
+  timeout?: number;
+};
 ```
 Execute by writing JSON to xd://debug.
 
@@ -324,64 +175,57 @@ Symbol-aware code intelligence from language servers — navigation, refactors, 
 </critical>
 
 ### Schema
-```json
-{
- "type": "object",
- "properties": {
-  "action": {
-   "enum": [
-    "capabilities",
-    "code_actions",
-    "definition",
-    "diagnostics",
-    "hover",
-    "implementation",
-    "references",
-    "reload",
-    "rename",
-    "rename_file",
-    "request",
-    "status",
-    "symbols",
-    "type_definition"
-   ],
-   "type": "string"
-  },
-  "file": {
-   "type": "string"
-  },
-  "line": {
-   "type": "number"
-  },
-  "symbol": {
-   "type": "string"
-  },
-  "query": {
-   "type": "string"
-  },
-  "new_name": {
-   "type": "string"
-  },
-  "apply": {
-   "type": "boolean"
-  },
-  "timeout": {
-   "type": "number",
-   "description": "Timeout in seconds (default 20; range 5–300).",
-   "maximum": 300,
-   "minimum": 5
-  },
-  "payload": {
-   "type": "string"
-  }
- },
- "required": [
-  "action"
- ],
- "additionalProperties": false
-}
+```ts
+type Args = {
+  action: "capabilities" | "code_actions" | "definition" | "diagnostics" | "hover" | "implementation" | "references" | "reload" | "rename" | "rename_file" | "request" | "status" | "symbols" | "type_definition";
+  file?: string;
+  line?: number;
+  symbol?: string;
+  query?: string;
+  new_name?: string;
+  apply?: boolean;
+  /** Timeout in seconds (default 20; range 5–300). */
+  timeout?: number;
+  payload?: string;
+};
 ```
 Execute by writing JSON to xd://lsp.
+
+## inspect_image — InspectImage
+
+Inspects an image file with a vision-capable model and returns compact text analysis.
+
+<instruction>
+- Use this for image understanding tasks (OCR, UI/screenshot debugging, scene/object questions)
+- Provide `path` as a local image file path, `Image #N` attachment label, or `attachment://N` URI
+- Write a specific `question`:
+  - what to inspect
+  - constraints (for example: "quote visible text verbatim", "only report confirmed findings")
+  - desired output format (bullets/table/JSON/short answer)
+- Keep `question` grounded in observable evidence and ask for uncertainty when details are unclear
+- Use this tool over `read` when the goal is image analysis
+</instruction>
+
+<output>
+- Returns text-only analysis from the vision model
+- No image content blocks are returned in tool output
+</output>
+
+<critical>
+- If image submission is blocked by settings, the tool will fail with an actionable error
+- If configured model does not support image input, configure a vision-capable model role before retrying
+</critical>
+
+### Schema
+```ts
+type Args = {
+  /** image file path, Image #N label, or attachment://N URI */
+  path: string;
+  /** question about image */
+  question: string;
+};
+```
+Execute by writing JSON to xd://inspect_image.
 
 ## browser — Browser
 
@@ -395,6 +239,7 @@ Drives real Chromium tab; full puppeteer access via JS.
 - `tab` helpers (drop to raw puppeteer `page` for anything uncovered):
   Element handles: `tab.ref("e5")` / `tab.id(n)` return a handle you call methods on directly — `(await tab.id(n)).click()`. Handles are NOT selectors: `tab.click`/`type`/`fill`/`waitFor*` take STRING selectors only. Snapshot refs work in any selector slot: `tab.click("e5")` ≡ `tab.click("aria-ref=e5")`.
   Simple: `tab.goto`, `tab.click`, `tab.type`, `tab.fill`, `tab.press`, `tab.scroll`, `tab.scrollIntoView`, `tab.drag`, `tab.uploadFile`, `tab.select`, `tab.screenshot`, `tab.extract`, `tab.evaluate`.
+  Screenshots: `tab.screenshot({ selector?, fullPage?, silent? })` saves to `browser.screenshotDir`, or OS temp when unset, then returns the path. It NEVER accepts a path.
   Waits: `tab.waitFor`, `tab.waitForSelector`, `tab.waitForUrl`, `tab.waitForResponse`, `tab.waitForNavigation`.
   Snapshots: `tab.observe()` → accessibility tree; `tab.ariaSnapshot()` → ARIA YAML with `[ref=eN]`.
 
@@ -414,111 +259,42 @@ Drives real Chromium tab; full puppeteer access via JS.
 </critical>
 
 ### Schema
-```json
-{
- "type": "object",
- "properties": {
-  "action": {
-   "description": "operation",
-   "type": "string",
-   "enum": [
-    "close",
-    "open",
-    "run"
-   ]
-  },
-  "name": {
-   "type": "string",
-   "description": "tab id (default 'main')"
-  },
-  "url": {
-   "type": "string",
-   "description": "url to open"
-  },
-  "app": {
-   "type": "object",
-   "properties": {
-    "path": {
-     "type": "string",
-     "description": "binary path to spawn"
-    },
-    "cdp_url": {
-     "type": "string",
-     "description": "existing cdp endpoint"
-    },
-    "args": {
-     "type": "array",
-     "description": "extra cli args",
-     "items": {
-      "type": "string"
-     }
-    },
-    "target": {
-     "type": "string",
-     "description": "substring to pick a window"
-    }
-   },
-   "additionalProperties": false
-  },
-  "viewport": {
-   "type": "object",
-   "properties": {
-    "width": {
-     "type": "number"
-    },
-    "height": {
-     "type": "number"
-    },
-    "scale": {
-     "type": "number"
-    }
-   },
-   "required": [
-    "width",
-    "height"
-   ],
-   "additionalProperties": false
-  },
-  "wait_until": {
-   "description": "navigation wait condition",
-   "type": "string",
-   "enum": [
-    "domcontentloaded",
-    "load",
-    "networkidle0",
-    "networkidle2"
-   ]
-  },
-  "dialogs": {
-   "description": "auto-handle dialogs",
-   "type": "string",
-   "enum": [
-    "accept",
-    "dismiss"
-   ]
-  },
-  "code": {
-   "type": "string",
-   "description": "js body to run in tab"
-  },
-  "timeout": {
-   "type": "number",
-   "description": "timeout in seconds"
-  },
-  "all": {
-   "type": "boolean",
-   "description": "close every tab"
-  },
-  "kill": {
-   "type": "boolean",
-   "description": "also kill spawned-app browsers"
-  }
- },
- "required": [
-  "action"
- ],
- "additionalProperties": false
-}
+```ts
+type Args = {
+  /** operation */
+  action: "close" | "open" | "run";
+  /** tab id (default 'main') */
+  name?: string;
+  /** url to open */
+  url?: string;
+  app?: {
+    /** binary path to spawn */
+    path?: string;
+    /** existing cdp endpoint */
+    cdp_url?: string;
+    /** extra cli args */
+    args?: string[];
+    /** substring to pick a window */
+    target?: string;
+  };
+  viewport?: {
+    width: number;
+    height: number;
+    scale?: number;
+  };
+  /** navigation wait condition */
+  wait_until?: "domcontentloaded" | "load" | "networkidle0" | "networkidle2";
+  /** auto-handle dialogs */
+  dialogs?: "accept" | "dismiss";
+  /** js body to run in tab */
+  code?: string;
+  /** timeout in seconds */
+  timeout?: number;
+  /** close every tab */
+  all?: boolean;
+  /** also kill spawned-app browsers */
+  kill?: boolean;
+};
 ```
 Execute by writing JSON to xd://browser.
 
@@ -537,6 +313,9 @@ Use tools whenever they improve correctness, completeness, or grounding.
 # Tool I/O
 - Prefer relative paths for `path`-like fields.
 - Most tools take `i`: a concise intent, present participle, 2–6 words, no period, capitalized.
+
+- Image tasks: prefer `inspect_image` over `read` to spare session context.
+
 # Specialized Tools
 You MUST use the specialized tool over its shell equivalent:
 - File or directory reads → `read` (a directory path lists entries).
