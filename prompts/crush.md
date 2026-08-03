@@ -387,7 +387,7 @@ Status: clean
 <available_skills>
   <skill>
     <name>crush-config</name>
-    <description>Use when the user needs help configuring Crush — working with crush.json, setting up providers, configuring LSPs, adding MCP servers, managing skills or permissions, or changing Crush behavior.</description>
+    <description>Use when the user needs help configuring Crush — writing crushrc (the Bash config format) or crush.json, setting up providers, models, LSPs, MCP servers, hooks, skills, permissions, or changing Crush behavior.</description>
     <location>crush://skills/crush-config/SKILL.md</location>
     <type>builtin</type>
   </skill>
