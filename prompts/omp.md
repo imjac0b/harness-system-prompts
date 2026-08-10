@@ -89,7 +89,7 @@ Directories need a directory-capable adapter (e.g. `dlv`).
 ### Schema
 ```ts
 type Args = {
-  action: "attach" | "continue" | "custom_request" | "data_breakpoint_info" | "disassemble" | "evaluate" | "launch" | "loaded_sources" | "modules" | "output" | "pause" | "read_memory" | "remove_breakpoint" | "remove_data_breakpoint" | "remove_instruction_breakpoint" | "scopes" | "sessions" | "set_breakpoint" | "set_data_breakpoint" | "set_instruction_breakpoint" | "stack_trace" | "step_in" | "step_out" | "step_over" | "terminate" | "threads" | "variables" | "write_memory";
+  action: "launch" | "attach" | "set_breakpoint" | "remove_breakpoint" | "set_instruction_breakpoint" | "remove_instruction_breakpoint" | "data_breakpoint_info" | "set_data_breakpoint" | "remove_data_breakpoint" | "continue" | "step_over" | "step_in" | "step_out" | "pause" | "evaluate" | "stack_trace" | "threads" | "scopes" | "variables" | "disassemble" | "read_memory" | "write_memory" | "modules" | "loaded_sources" | "custom_request" | "output" | "terminate" | "sessions";
   /** debug target path; Delve accepts Go package directories */
   program?: string;
   /** program arguments */
@@ -136,7 +136,7 @@ type Args = {
   data?: string;
   /** data breakpoint id */
   data_id?: string;
-  access_type?: "read" | "readWrite" | "write";
+  access_type?: "read" | "write" | "readWrite";
   /** custom dap request command */
   command?: string;
   /** custom request arguments */
@@ -177,7 +177,7 @@ Symbol-aware code intelligence from language servers — navigation, refactors, 
 ### Schema
 ```ts
 type Args = {
-  action: "capabilities" | "code_actions" | "definition" | "diagnostics" | "hover" | "implementation" | "references" | "reload" | "rename" | "rename_file" | "request" | "status" | "symbols" | "type_definition";
+  action: "diagnostics" | "definition" | "references" | "hover" | "symbols" | "rename" | "rename_file" | "code_actions" | "type_definition" | "implementation" | "status" | "reload" | "capabilities" | "request";
   file?: string;
   line?: number;
   symbol?: string;
@@ -263,7 +263,7 @@ Drives real Chromium tab; full puppeteer access via JS.
 ```ts
 type Args = {
   /** operation */
-  action: "close" | "open" | "run";
+  action: "open" | "close" | "run";
   /** tab id (default 'main') */
   name?: string;
   /** url to open */
@@ -286,7 +286,7 @@ type Args = {
     scale?: number;
   };
   /** navigation wait condition */
-  wait_until?: "domcontentloaded" | "load" | "networkidle0" | "networkidle2";
+  wait_until?: "load" | "domcontentloaded" | "networkidle0" | "networkidle2";
   /** auto-handle dialogs */
   dialogs?: "accept" | "dismiss";
   /** js body to run in tab */

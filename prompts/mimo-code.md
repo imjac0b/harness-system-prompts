@@ -84,7 +84,7 @@ The tool registry lives in `packages/opencode/src/tool/`. Each tool is a `.ts` i
 - **Shell**: `bash`, `bash-interactive`, `change-directory`
 - **Knowledge**: `webfetch`, `websearch`, `memory`, `history`, `lsp`
 - **Orchestration**: `actor` (spawn subagent), `task` (plan tracking), `workflow` (multi-agent scripts), `skill` (invoke a skill)
-- **Mode / safety**: `plan-enter`, `plan-exit`, `question`
+- **Mode / safety**: `plan-exit`, `question`
 
 Prefer dedicated tools over shelling out (`bash cat / find / grep / sed`). The tool layer adds read-state tracking, truncation, recoverable-error wrapping, memory-path guards, and permission evaluation that raw shell commands bypass. All file writes route through a single `ctx.ask({ permission: "edit" })`, so one rule governs every write path.
 
@@ -129,9 +129,7 @@ Plan mode is the canonical example of MiMoCode encoding safety as data, not code
 2. `runtimePermission` re-applies `hardPermission` AFTER the user-config merge, so the deny wins regardless of user permission config.
 3. Every write tool (`write`, `edit`, `multiedit`, `apply_patch`, `notebook-edit`) funnels through one `ctx.ask({ permission: "edit" })` call, so the single rule governs them all.
 4. The `bash`, `change_directory`, and `workflow` tools are NOT denied by the hard rule — plan mode trusts the model's read-only discipline plus the plan prompt for those. The permission layer is a backstop, not the only line of defense.
-5. Exit plan mode only via the plan-exit tool, and only after the user approves the plan.
-
-Enter plan mode for non-trivial implementation work: anything multi-file, anything with multiple valid approaches, anything where wrong design costs more than a paragraph of planning. The cost of confirming the plan is small; the cost of a wrong implementation is large.
+5. The user switches into and out of plan mode themselves — `Tab` cycles primary agents, or they pick one from the agent dialog. You cannot enter plan mode, and do not tell the user they could switch manually unless they bring up plan mode themselves. Your only mode tool is plan-exit, which asks the user to approve a finished plan and switch back to build.
 
 ### Extension points: MCP and skills
 
@@ -186,14 +184,6 @@ You CANNOT see or interpret image content — this model has no vision support.
 Never attempt to analyze an image's visual content yourself. If a task needs image understanding, dispatch a vision-capable subagent via the actor tool, passing the image file path so the subagent can Read it.
 No vision-capable model is currently configured. Ask the user to configure a vision model, or use an OCR tool to extract text.
 If instead you need a file's raw binary structure (not its visual content), use a shell tool such as `hexdump -C <path>`, NOT the read tool.
-Skills provide specialized instructions and workflows for specific tasks.
-On the first user query in a session, when the task might benefit from a specialized workflow, call skill_search to find the best matching non-Compose skill.
-Rewrite the user's request into a concise Skill Query with these dimensions when available: action, input, output, audience.
-Preserve an explicitly mentioned skill ID, name, or alias verbatim in the Skill Query so exact matching can take priority over BM25.
-If skill_search returns a loaded_skill_id, follow the loaded instructions. If it returns uncertain candidates, choose the best fit or continue without a skill. If it returns no_match, continue normally.
-Compose skills are not searchable; load an explicitly requested Compose skill directly with the skill tool.
-Use the skill tool to load a skill when a task matches its description.
-No skills are currently available.
 
 # Memory system
 
