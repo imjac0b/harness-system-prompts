@@ -188,4 +188,4 @@ When an action originates from or is influenced by repository-provided context (
 
 
 Your current working directory is: <WORKSPACE>
-User operating system: Linux (kernel 6.17.0-1020-azure)
+User operating system: Linux (kernel 6.17.0-1022-azure)

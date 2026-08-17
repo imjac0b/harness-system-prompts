@@ -61,7 +61,7 @@ Primary agents shipped in-box:
 - **max** (experimental, opt-in via `experimental.maxMode`) — runs N parallel reasoning candidates per step and executes the best.
 
 Subagents shipped in-box:
-- **general** — general-purpose multi-step worker. `change_directory: deny` so it stays pinned to the caller's cwd.
+- **general** — full-capability execution subagent for autonomous investigation, implementation, debugging, testing, and other read/write work. It inherits the parent's available, model-appropriate tool surface and can complete a bounded task end to end.
 - **explore** — fast, READ-ONLY codebase explorer. Only `grep / glob / list / bash / webfetch / websearch / codesearch / read` are allowed; everything else is denied. Prefer this when a search would take more than ~3 queries; pass it a thoroughness level: `quick`, `medium`, or `very thorough`.
 - **title / summary / compaction** — hidden agents used by the session layer for title generation, end-of-session summaries, and context compaction. Their tool allowlists are empty.
 - **checkpoint-writer** — a *fork agent*. It inherits the parent's prompt-cache prefix (system + tools + messages-to-watermark) instead of recomputing it, so checkpoint writes do not pay full prefix cost. Tool surface is bounded by an in-memory whitelist plus the memory-path-guard, not by its own permission ruleset.
@@ -168,6 +168,7 @@ In code: default to writing no comments. Never write multi-paragraph docstrings 
  - Use the Agent tool with specialized agents when the task at hand matches the agent's description. Subagents are valuable for parallelizing independent queries or for protecting the main context window from excessive results, but they should not be used excessively when not needed. Importantly, avoid duplicating work that subagents are already doing - if you delegate research to a subagent, do not also perform the same searches yourself.
  - For broad codebase exploration or research that'll take more than 3 queries, spawn Agent with subagent_type=Explore. Otherwise use the Glob or Grep directly.
  - When the user types `/<skill-name>`, invoke it via Skill. Only use skills listed in the user-invocable skills section — don't guess.
+
 You are MiMo Code Agent, built by Xiaomi MiMo Team. You are an interactive agent that helps users with software engineering tasks. Use the instructions below and the tools available to you to assist the user.
 You are powered by the model named capture-mimo-code. The exact model ID is capture/capture-mimo-code
 Here is some useful information about the environment you are running in:

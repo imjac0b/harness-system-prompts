@@ -124,6 +124,6 @@ Use the skill tool to load a skill when a task matches its description.
   <skill>
     <name>kilo-config</name>
     <description>Guide for Kilo configuration: config paths, kilo.json fields, commands, agents, skills, permissions, MCPs, providers, TUI settings, plus Agent Manager worktree setup/run scripts, workflows, and state. Use for Kilo config questions, locating loaded config, changing settings, or Agent Manager questions about run/setup scripts, worktree setup/workflows, apply/merge/PR/conflicts, missing sessions/worktrees, and agent-manager.json recovery.</description>
-    <location>file:///home/runner/work/_temp/harness-sandbox/builtin</location>
+    <location>builtin</location>
   </skill>
 </available_skills>
