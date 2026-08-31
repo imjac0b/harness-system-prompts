@@ -9,35 +9,35 @@
   },
   "claude_code": {
     "captured": true,
-    "version": "2.1.241 (Claude Code)"
+    "version": "2.1.251 (Claude Code)"
   },
   "cline_cli": {
     "captured": true,
-    "version": "3.0.57"
+    "version": "3.0.60"
   },
   "cline_sdk": {
     "captured": true,
-    "version": "0.0.78"
+    "version": "0.0.81"
   },
   "codex": {
     "captured": true,
-    "version": "codex-cli 0.149.1"
+    "version": "codex-cli 0.151.0"
   },
   "codex_desktop": {
     "captured": true,
-    "version": "ChatGPT 26.818.41705 (codex-cli 0.149.0-alpha.4.1)"
+    "version": "ChatGPT 26.825.51511 (codex-cli 0.151.0-alpha.7.2)"
   },
   "crush": {
     "captured": true,
-    "version": "crush version v0.91.0"
+    "version": "crush version v0.91.2"
   },
   "gemini_cli": {
     "captured": true,
-    "version": "0.56.0"
+    "version": "0.57.0"
   },
   "grok_code_cli": {
     "captured": true,
-    "version": "grok 1.0.5 (5115b46bc9)"
+    "version": "grok 1.0.13 (5e9a58528b76)"
   },
   "hermes_agent": {
     "captured": true,
@@ -45,7 +45,7 @@
   },
   "kilo_code_cli": {
     "captured": true,
-    "version": "7.4.23"
+    "version": "7.5.6"
   },
   "kimi_cli": {
     "captured": true,
@@ -57,11 +57,11 @@
   },
   "omp": {
     "captured": true,
-    "version": "omp/18.0.3"
+    "version": "omp/18.0.11"
   },
   "openclaw": {
     "captured": true,
-    "version": "OpenClaw 2026.7.1-2 (0790d9f)"
+    "version": "OpenClaw 2026.8.1 (ea80657)"
   },
   "openhands": {
     "captured": true,
@@ -73,14 +73,14 @@
   },
   "opencode": {
     "captured": true,
-    "version": "1.18.21"
+    "version": "1.18.25"
   },
   "pi": {
     "captured": true,
-    "version": "0.84.2"
+    "version": "0.84.4"
   },
   "qwen_code": {
     "captured": true,
-    "version": "0.22.0"
+    "version": "0.22.3"
   }
 }

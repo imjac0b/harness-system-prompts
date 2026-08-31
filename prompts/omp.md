@@ -211,7 +211,7 @@ Inspects image files via a vision-capable model; returns compact text analysis.
 
 <instruction>
 - Use for image understanding: OCR, UI/screenshot debugging, scene/object questions.
-- `path`: local image-file path | `Image #N` attachment label | `attachment://N` URI.
+- `path`: local image-file path | local `.svg`/`.svgz` path with `:img` | `Image #N` attachment label | `attachment://N` URI.
 - `question` specific: inspection target; constraints (e.g. "quote visible text verbatim", "only report confirmed findings"); output format (bullets/table/JSON/short answer).
 - Ground `question` in observable evidence; request uncertainty for unclear details.
 - For image analysis, use over `read`.
@@ -230,7 +230,7 @@ Inspects image files via a vision-capable model; returns compact text analysis.
 ### Schema
 ```ts
 type Args = {
-  /** image file path, Image #N label, or attachment://N URI */
+  /** image file path, local .svg/.svgz path with :img, Image #N label, or attachment://N URI */
   path: string;
   /** question about image */
   question: string;
@@ -262,7 +262,8 @@ Drives real Chromium tab; full puppeteer access via JS.
   - Raw request interception is run-scoped: run end removes `request` handlers, disables interception, releases held requests.
 
 - `app.path` → NEVER tamper with a real desktop app (no stealth patches).
-- `app.relay: true` → drive the user's own Chrome tabs via the omp browser relay (auto-started; needs the OMP Browser Relay extension installed). `app.target` picks a tab by URL/title substring; without it the visible tab is adopted without stealing focus.
+- `app.relay: true` → drive the user's own Chrome tabs via the omp browser relay (auto-started; needs the OMP Browser Relay extension installed). `app.target` picks a tab by URL/title substring; without it the visible tab is adopted — and an `open` carrying `url` NAVIGATES that adopted tab.
+- Relay can also engage without `app.relay` when the `browser.relay` setting is on; every relay open result says `on relay`. Either way you are inside the user's REAL logged-in browser: every tab, session, and click belongs to the user and sites attribute your actions to their account. Name a target (or create your own tab), never navigate the user's visible tab uninvited, take no consequential action the user didn't ask for, and `close` when done.
 - `close` releases the named tool session. It closes tool-owned headless pages and owned cmux surfaces, but NEVER closes pages in CDP-connected or relay browsers. Spawned-browser pages remain open unless `kill: true` terminates their process.
 - Selectors: CSS + puppeteer `aria/…`, `text/…`, `xpath/…`, `pierce/…`. Playwright-only pseudos (`:has-text()`, `:visible`) are REJECTED.
 </instruction>
@@ -371,7 +372,7 @@ SHOULD use syntax-aware tools before text hacks:
 - Fix source; NEVER suppress symptom/special-case input unless asked.
 - Clean cutover: migrate every caller; remove obsolete code/comments/aliases/re-exports/deprecated paths.
 - Prefer existing-file updates over new files. Review as user.
-- NEVER run destructive git commands/delete code you didn't write.
+- NEVER run destructive git commands/delete unrelated code you didn't write; code the cutover obsoletes is in scope.
 
 # 5. Verify
 - NEVER yield non-trivial work without deliverable proof:

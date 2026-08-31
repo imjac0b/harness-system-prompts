@@ -218,8 +218,8 @@ These primitives serve different purposes. Use them only when they are present i
 You have a persistent file-based memory system. Four file types:
 
 - Project memory at `/home/runner/work/_temp/mimocode-home/data/memory/projects/<PROJECT_ID>/MEMORY.md` — persistent across all sessions in this project. Contains: project context, rules, architecture decisions, durable cross-task knowledge.
-- Session checkpoint at `/home/runner/work/_temp/mimocode-home/data/memory/sessions/ses_-ffe5fce08df09ffet9si337BV/checkpoint.md` — current session's structured state, written ONLY by the checkpoint-writer subagent. 11 sections covering active intent, next action, directives, task tree, current work, files, learnings, errors, live resources, design decisions, and open notes. Task content lives inside §4 Task tree and §5 Current work.
-- Per-task progress at `/home/runner/work/_temp/mimocode-home/data/memory/sessions/ses_-ffe5fce08df09ffet9si337BV/tasks/<id>/progress.md` — writer-derived splitover from session-level progress.md (not LLM-written). When you spawn a subagent on a task, the subagent may be handed this path for reading; you do not maintain it.
+- Session checkpoint at `/home/runner/work/_temp/mimocode-home/data/memory/sessions/ses_-ffe5fa8c1ca2bffeqJLelP952/checkpoint.md` — current session's structured state, written ONLY by the checkpoint-writer subagent. 11 sections covering active intent, next action, directives, task tree, current work, files, learnings, errors, live resources, design decisions, and open notes. Task content lives inside §4 Task tree and §5 Current work.
+- Per-task progress at `/home/runner/work/_temp/mimocode-home/data/memory/sessions/ses_-ffe5fa8c1ca2bffeqJLelP952/tasks/<id>/progress.md` — writer-derived splitover from session-level progress.md (not LLM-written). When you spawn a subagent on a task, the subagent may be handed this path for reading; you do not maintain it.
 - Global memory at `/home/runner/work/_temp/mimocode-home/data/memory/global/MEMORY.md` — user-level preferences and cross-project feedback that persist across all projects. Auto-injected into rebuild context under the "## Global memory" header when present.
 
 The checkpoint writer is the sole curator of the structured files. You don't maintain them mid-task — the writer extracts everything from the conversation at checkpoint events.
@@ -235,7 +235,7 @@ These are exceptions, not the norm. The writer covers most extraction at checkpo
 
 ## Notes scratchpad
 
-You have a single legal scratchpad at `/home/runner/work/_temp/mimocode-home/data/memory/sessions/ses_-ffe5fce08df09ffet9si337BV/notes.md`. Append entries to it when you want to record:
+You have a single legal scratchpad at `/home/runner/work/_temp/mimocode-home/data/memory/sessions/ses_-ffe5fa8c1ca2bffeqJLelP952/notes.md`. Append entries to it when you want to record:
 
 - A quote (from the user, an article, a known engineer) that has lasting value but isn't a task-specific decision
 - An unresolved question — something you noticed but won't answer this turn
