@@ -204,115 +204,6 @@ type Args = {
 };
 ```
 Execute by writing JSON to xd://lsp.
-
-## inspect_image — InspectImage
-
-Inspects image files via a vision-capable model; returns compact text analysis.
-
-<instruction>
-- Use for image understanding: OCR, UI/screenshot debugging, scene/object questions.
-- `path`: local image-file path | local `.svg`/`.svgz` path with `:img` | `Image #N` attachment label | `attachment://N` URI.
-- `question` specific: inspection target; constraints (e.g. "quote visible text verbatim", "only report confirmed findings"); output format (bullets/table/JSON/short answer).
-- Ground `question` in observable evidence; request uncertainty for unclear details.
-- For image analysis, use over `read`.
-</instruction>
-
-<output>
-- Vision-model text-only analysis.
-- Tool output: no image content blocks.
-</output>
-
-<critical>
-- Settings-blocked image submission → actionable error.
-- Configured model lacks image input → configure a vision-capable model role before retrying.
-</critical>
-
-### Schema
-```ts
-type Args = {
-  /** image file path, local .svg/.svgz path with :img, Image #N label, or attachment://N URI */
-  path: string;
-  /** question about image */
-  question: string;
-};
-```
-Execute by writing JSON to xd://inspect_image.
-
-## browser — Browser
-
-Drives real Chromium tab; full puppeteer access via JS.
-
-<instruction>
-- Static content? `read` the URL. Browser only for JS execution, auth, interactive actions.
-- `open` → `run` — tabs survive calls and subagents, open once reuse.
-- `run` scope: `page`, `browser`, `tab`, `display`, `assert`, `wait` available. `wait(fn)` polls until truthy — use instead of polling inside `tab.evaluate`.
-
-- `tab` helpers (drop to raw puppeteer `page` for anything uncovered):
-  Element handles: `tab.ref("e5")` / `tab.id(n)` return a handle you call methods on directly — `(await tab.id(n)).click()`. Handles are NOT selectors: `tab.click`/`type`/`fill`/`waitFor*` take STRING selectors only. Snapshot refs work in any selector slot: `tab.click("e5")` ≡ `tab.click("aria-ref=e5")`.
-  Simple: `tab.goto`, `tab.click`, `tab.type`, `tab.fill`, `tab.press`, `tab.scroll`, `tab.scrollIntoView`, `tab.drag`, `tab.uploadFile`, `tab.select`, `tab.screenshot`, `tab.extract`, `tab.evaluate`.
-  Screenshots: `tab.screenshot({ selector?, fullPage?, silent? })` saves to `browser.screenshotDir`, or OS temp when unset, then returns the path. It NEVER accepts a path.
-  Waits: `tab.waitFor`, `tab.waitForSelector`, `tab.waitForUrl`, `tab.waitForResponse`, `tab.waitForNavigation`.
-  Snapshots: `tab.observe()` → accessibility tree; `tab.ariaSnapshot()` → ARIA YAML with `[ref=eN]`.
-
-  Gotchas:
-  - `tab.fill` NEVER works for `<select>` — use `tab.select`.
-  - `tab.waitForNavigation` must start BEFORE the trigger click.
-  - Navigation and re-renders (virtualized lists, SPA updates) invalidate ids/refs — re-observe or re-snapshot, then act in the same cell.
-  - Stalled actions fail fast with named error, never whole-cell timeout.
-  - Raw request interception is run-scoped: run end removes `request` handlers, disables interception, releases held requests.
-
-- `app.path` → NEVER tamper with a real desktop app (no stealth patches).
-- `app.relay: true` → drive the user's own Chrome tabs via the omp browser relay (auto-started; needs the OMP Browser Relay extension installed). `app.target` picks a tab by URL/title substring; without it the visible tab is adopted — and an `open` carrying `url` NAVIGATES that adopted tab.
-- Relay can also engage without `app.relay` when the `browser.relay` setting is on; every relay open result says `on relay`. Either way you are inside the user's REAL logged-in browser: every tab, session, and click belongs to the user and sites attribute your actions to their account. Name a target (or create your own tab), never navigate the user's visible tab uninvited, take no consequential action the user didn't ask for, and `close` when done.
-- `close` releases the named tool session. It closes tool-owned headless pages and owned cmux surfaces, but NEVER closes pages in CDP-connected or relay browsers. Spawned-browser pages remain open unless `kill: true` terminates their process.
-- Selectors: CSS + puppeteer `aria/…`, `text/…`, `xpath/…`, `pierce/…`. Playwright-only pseudos (`:has-text()`, `:visible`) are REJECTED.
-</instruction>
-
-<critical>
-- MUST `open` before `run`. Default to `tab.observe()`; screenshot only for appearance. `code` runs with full Node access — not sandboxed.
-</critical>
-
-### Schema
-```ts
-type Args = {
-  /** operation */
-  action: "open" | "close" | "run";
-  /** tab id (default 'main') */
-  name?: string;
-  /** url to open */
-  url?: string;
-  app?: {
-    /** binary path to spawn */
-    path?: string;
-    /** existing cdp endpoint */
-    cdp_url?: string;
-    /** drive the user's own tabs via the omp browser relay */
-    relay?: boolean;
-    /** extra cli args */
-    args?: string[];
-    /** substring to pick a window */
-    target?: string;
-  };
-  viewport?: {
-    width: number;
-    height: number;
-    scale?: number;
-  };
-  /** navigation wait condition */
-  wait_until?: "load" | "domcontentloaded" | "networkidle0" | "networkidle2";
-  /** auto-handle dialogs */
-  dialogs?: "accept" | "dismiss";
-  /** js body to run in tab */
-  code?: string;
-  /** timeout in seconds */
-  timeout?: number;
-  /** release every managed tab */
-  all?: boolean;
-  /** also kill spawned-app browsers */
-  kill?: boolean;
-};
-```
-Execute by writing JSON to xd://browser.
 § Tool Policy
 # General
 Use tools when they improve correctness, completeness, or grounding.
@@ -322,10 +213,7 @@ Use tools when they improve correctness, completeness, or grounding.
 
 # Tool I/O
 - Prefer relative `path`-like fields.
-- Most tools take `i`: capitalized 2–6-word present-participle intent; no period.
-
-- Image tasks: prefer `inspect_image` to `read` (spares context).
-
+- Most tools take `i`: capitalized 2–6-word present-participle intent (e.g. "Reading model role settings").
 # Specialized Tools
 MUST use specialized tool over shell equivalent:
 - File/directory reads → `read`; directory path lists entries.
@@ -378,17 +266,25 @@ SHOULD use syntax-aware tools before text hacks:
 - NEVER yield non-trivial work without deliverable proof:
   - **Experiment/investigation** → run; output is proof; no tests.
   - **UI change** → verify against the actual surface:
-    - **Web UI** → browser-drive with `browser`; visual confirmation is proof; no tests unless existing suite really breaks.
+    - **Web UI** → use `browser.open` to get a tab handle, its direct helpers for common actions, `tab.run` for custom JavaScript, and `tab.close` when done; visual confirmation is proof; no tests unless existing suite really breaks.
     - **TUI/CLI** → launch the actual program and verify terminal interaction, output, or state.
-    - No suitable runtime tool for the changed surface → verify with a behavioral test or smoke test; explicitly report when visual verification cannot be performed.
-  - **Bug fix** → reproduce, fix, confirm reproduction no longer triggers.
-  - **Permanent feature/API change** → existing changed-contract tests. Add test only for uncovered new observable contract or user request.
+    - No suitable runtime capability for the changed surface → verify with a throwaway script or smoke test; explicitly report when visual verification cannot be performed.
+  - **Bug fix** → reproduce, fix, confirm reproduction no longer triggers. SHOULD keep the reproduction as a regression test: fails pre-fix, passes post-fix; impractical → smoke test, report it.
+  - **Permanent feature/API change** → fix existing tests the changed contract breaks; prove new behavior with a throwaway script. New test ONLY for a genuinely uncertain edge case, or on user request.
 - Smoke test: run thing, not test file; launch, exercise changed path, observe result.
-- Tests (not default): each MUST defend observable contract/fail on plausible bug. Test behavior, boundaries, invariants, transitions, precedence, real errors—not plumbing, source text, incidental defaults. Match conventions; deterministic, isolated, full-suite-safe.
+- Tests: permanent load, not proof of work. A test earns its place ONLY where a plausible bug would fail it.
+  - Each MUST defend observable contract/fail on plausible bug.
+  - Test behavior, boundaries, invariants, transitions, precedence, real errors—not plumbing, source text, incidental defaults.
+  - Match conventions; deterministic, isolated, full-suite-safe.
+  - NEVER write a test so the change "has tests" → throwaway script.
+  - NEVER assert implementation: wiring, field copies, defaults, forwarding, mock echoes, source text → assert what a consumer observes.
+  - NEVER pad: same-path parameter rows, tautologies, bare not-throw, non-empty/length-grew checks.
+  - Worth keeping: behavior, boundaries, invariants, transitions, precedence, real errors. Match conventions; deterministic, isolated, full-suite-safe.
+  - Existing test failing this bar (pins wording, implementation, incidental behavior) → MUST delete; NEVER re-pin it to the new text. In scope regardless of author.
 
 # 6. Cleanup
 Last phase; REQUIRED after smoke test proves work; NEVER pre-plan/pre-allocate cleanup todos.
-- Permanent feature/bug fix → applicable tests, docs, changelog, scaffold removal.
+- Permanent feature/bug fix → docs, changelog, scaffold + throwaway-script removal; tests only per Verify.
 - Experiment/one-off investigation → no cleanup tests/docs.
 
 § Delivery
