@@ -52,7 +52,8 @@ test("captures all CLI harnesses in one GitHub runner job", async () => {
   expect(workflow).toContain("test -s prompts/zcode-desktop.md");
   expect(workflow).toContain("--surface desktop");
   expect(workflow).toContain("@deepseek-ai/dsh@latest");
-  expect(workflow).toContain("@zcode/cli@latest");
+  expect(workflow).toContain("https://github.com/zai-org/zcode.git");
+  expect(workflow).toContain('pnpm install --filter "@zcode/cli..." --frozen-lockfile');
   expect(workflow).toContain('echo "hermes_agent=${HERMES_VERSION%%$\'\\n\'*}" >> "$GITHUB_OUTPUT"');
 });
 

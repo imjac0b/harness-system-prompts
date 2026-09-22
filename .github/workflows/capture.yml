@@ -56,6 +56,10 @@ jobs:
 
       - uses: astral-sh/setup-uv@v6
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
       - name: Install project dependencies
         run: bun install --frozen-lockfile
 
@@ -76,8 +80,7 @@ jobs:
             @deepseek-ai/dsh@latest
           npm install --global \
             @charmland/crush@latest \
-            @mimo-ai/cli@latest \
-            @zcode/cli@latest
+            @mimo-ai/cli@latest
           uv tool install --python 3.13 kimi-cli
           uv tool install --python 3.13 hermes-agent
           uv tool install --python 3.12 openhands
@@ -97,6 +100,14 @@ jobs:
           cd "$RUNNER_TEMP/cline-sdk-runner"
           bun init -y
           bun add @cline/sdk@latest
+
+          # @zcode/cli is not published to npm (private workspace package); build
+          # its "dist/zcode.cjs" bundle from source instead.
+          git clone --depth 1 https://github.com/zai-org/zcode.git "$RUNNER_TEMP/zcode-src"
+          cd "$RUNNER_TEMP/zcode-src"
+          pnpm install --filter "@zcode/cli..." --frozen-lockfile
+          pnpm --filter "@zcode/cli..." build
+          echo "ZCODE_CLI_BIN=$RUNNER_TEMP/zcode-src/apps/zcode-cli/packages/cli/dist/zcode.cjs" >> "$GITHUB_ENV"
 
       - name: Start local capture APIs
         run: |
@@ -339,7 +350,7 @@ jobs:
           printf '%s\n' \
             '{"provider":{"capture":{"kind":"openai-compatible","options":{"baseURL":"http://127.0.0.1:8787/v1","apiKey":"local-capture-only"},"models":{"capture-zcode":{}}}},"model":"capture/capture-zcode"}' \
             > .zcode/config.json
-          zcode -p "Reply with the word captured." --output-format json
+          node "$ZCODE_CLI_BIN" -p "Reply with the word captured." --output-format json
 
       - name: Capture ZCode Desktop instructions
         working-directory: ${{ runner.temp }}/harness-sandbox
@@ -347,7 +358,7 @@ jobs:
           HOME: ${{ runner.temp }}/zcode-home
         run: |
           node -e 'const fs=require("node:fs"); const p=".zcode/config.json"; const c=JSON.parse(fs.readFileSync(p,"utf8")); c.provider.capture.models={"capture-zcode-desktop":{}}; c.model="capture/capture-zcode-desktop"; fs.writeFileSync(p, JSON.stringify(c))'
-          zcode -p "Reply with the word captured." --surface desktop --output-format json
+          node "$ZCODE_CLI_BIN" -p "Reply with the word captured." --surface desktop --output-format json
 
       - name: Capture Codex instructions
         working-directory: ${{ runner.temp }}/harness-sandbox
@@ -541,8 +552,8 @@ jobs:
           HERMES_VERSION=$(hermes --version)
           echo "hermes_agent=${HERMES_VERSION%%$'\n'*}" >> "$GITHUB_OUTPUT"
           echo "deepseek_harness=$(dsh --version)" >> "$GITHUB_OUTPUT"
-          echo "zcode=$(zcode --version)" >> "$GITHUB_OUTPUT"
-          echo "zcode_desktop=$(zcode --version)" >> "$GITHUB_OUTPUT"
+          echo "zcode=$(node "$ZCODE_CLI_BIN" --version)" >> "$GITHUB_OUTPUT"
+          echo "zcode_desktop=$(node "$ZCODE_CLI_BIN" --version)" >> "$GITHUB_OUTPUT"
 
       - name: Prepare CLI capture artifact
         run: |
