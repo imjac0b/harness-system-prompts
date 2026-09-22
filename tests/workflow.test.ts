@@ -56,6 +56,7 @@ test("captures all CLI harnesses in one GitHub runner job", async () => {
   expect(workflow).toContain('dsh --profile headless "Reply with the word captured."');
   expect(workflow).toContain("https://github.com/zai-org/zcode.git");
   expect(workflow).toContain('pnpm install --filter "@zcode/cli..." --frozen-lockfile');
+  expect(workflow).toContain('"$HOME/.zcode/cli/config.json"');
   expect(workflow).toContain('echo "hermes_agent=${HERMES_VERSION%%$\'\\n\'*}" >> "$GITHUB_OUTPUT"');
 });
 

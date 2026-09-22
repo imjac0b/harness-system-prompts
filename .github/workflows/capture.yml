@@ -355,18 +355,28 @@ jobs:
         env:
           HOME: ${{ runner.temp }}/zcode-home
         run: |
-          mkdir -p .zcode
+          # Provider/model selection is read once from the legacy personal CLI
+          # config ($HOME/.zcode/cli/config.json) and migrated into ZCode's
+          # modern provider store on first use; it is NOT the project-level
+          # .zcode/config.json (a different, unrelated schema).
+          mkdir -p "$HOME/.zcode/cli"
           printf '%s\n' \
             '{"provider":{"capture":{"kind":"openai-compatible","options":{"baseURL":"http://127.0.0.1:8787/v1","apiKey":"local-capture-only"},"models":{"capture-zcode":{}}}},"model":"capture/capture-zcode"}' \
-            > .zcode/config.json
+            > "$HOME/.zcode/cli/config.json"
           node "$ZCODE_CLI_BIN" -p "Reply with the word captured." --output-format json
 
       - name: Capture ZCode Desktop instructions
         working-directory: ${{ runner.temp }}/harness-sandbox
         env:
-          HOME: ${{ runner.temp }}/zcode-home
+          HOME: ${{ runner.temp }}/zcode-desktop-home
         run: |
-          node -e 'const fs=require("node:fs"); const p=".zcode/config.json"; const c=JSON.parse(fs.readFileSync(p,"utf8")); c.provider.capture.models={"capture-zcode-desktop":{}}; c.model="capture/capture-zcode-desktop"; fs.writeFileSync(p, JSON.stringify(c))'
+          # A separate $HOME avoids the "already migrated" personal provider
+          # store left behind by the terminal-surface capture above, so this
+          # run's legacy config is imported fresh with its own default model.
+          mkdir -p "$HOME/.zcode/cli"
+          printf '%s\n' \
+            '{"provider":{"capture":{"kind":"openai-compatible","options":{"baseURL":"http://127.0.0.1:8787/v1","apiKey":"local-capture-only"},"models":{"capture-zcode-desktop":{}}}},"model":"capture/capture-zcode-desktop"}' \
+            > "$HOME/.zcode/cli/config.json"
           node "$ZCODE_CLI_BIN" -p "Reply with the word captured." --surface desktop --output-format json
 
       - name: Capture Codex instructions
