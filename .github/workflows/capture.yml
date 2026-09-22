@@ -25,6 +25,7 @@ jobs:
       cline_sdk_version: ${{ steps.versions.outputs.cline_sdk }}
       codex_version: ${{ steps.versions.outputs.codex }}
       crush_version: ${{ steps.versions.outputs.crush }}
+      deepseek_harness_version: ${{ steps.versions.outputs.deepseek_harness }}
       gemini_cli_version: ${{ steps.versions.outputs.gemini_cli }}
       grok_code_cli_version: ${{ steps.versions.outputs.grok_code_cli }}
       hermes_agent_version: ${{ steps.versions.outputs.hermes_agent }}
@@ -38,6 +39,7 @@ jobs:
       openclaw_version: ${{ steps.versions.outputs.openclaw }}
       pi_version: ${{ steps.versions.outputs.pi }}
       qwen_code_version: ${{ steps.versions.outputs.qwen_code }}
+      zcode_version: ${{ steps.versions.outputs.zcode }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -69,10 +71,12 @@ jobs:
             @oh-my-pi/pi-coding-agent@latest \
             cline@latest \
             openclaw@latest \
-            opencode-ai@latest
+            opencode-ai@latest \
+            @deepseek-ai/dsh@latest
           npm install --global \
             @charmland/crush@latest \
-            @mimo-ai/cli@latest
+            @mimo-ai/cli@latest \
+            @zcode/cli@latest
           uv tool install --python 3.13 kimi-cli
           uv tool install --python 3.13 hermes-agent
           uv tool install --python 3.12 openhands
@@ -304,6 +308,38 @@ jobs:
             --no-check-model-accepts-settings \
             --message "Reply with the word captured."
 
+      - name: Capture DeepSeek Harness instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          DSH_HOME: ${{ runner.temp }}/dsh-home
+          DSH_TELEMETRY_DISABLED: "1"
+          MOCK_API_KEY: local-capture-only
+        run: |
+          mkdir -p "$DSH_HOME/profiles/headless"
+          printf '%s\n' \
+            '- id: llm-pi-ai' \
+            '  config:' \
+            '    providers:' \
+            '      mock:' \
+            '        apiKeyEnv: MOCK_API_KEY' \
+            '        api: openai-completions' \
+            '        baseURL: http://127.0.0.1:8787/v1' \
+            '        models:' \
+            '          - id: capture-dsh' \
+            > "$DSH_HOME/profiles/headless/cordis.patch.yml"
+          dsh --profile headless --json "Reply with the word captured."
+
+      - name: Capture ZCode instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          HOME: ${{ runner.temp }}/zcode-home
+        run: |
+          mkdir -p .zcode
+          printf '%s\n' \
+            '{"provider":{"capture":{"kind":"openai-compatible","options":{"baseURL":"http://127.0.0.1:8787/v1","apiKey":"local-capture-only"},"models":{"capture-zcode":{}}}},"model":"capture/capture-zcode"}' \
+            > .zcode/config.json
+          zcode -p "Reply with the word captured." --output-format json
+
       - name: Capture Codex instructions
         working-directory: ${{ runner.temp }}/harness-sandbox
         env:
@@ -495,6 +531,8 @@ jobs:
           echo "openclaw=$(openclaw --version)" >> "$GITHUB_OUTPUT"
           HERMES_VERSION=$(hermes --version)
           echo "hermes_agent=${HERMES_VERSION%%$'\n'*}" >> "$GITHUB_OUTPUT"
+          echo "deepseek_harness=$(dsh --version)" >> "$GITHUB_OUTPUT"
+          echo "zcode=$(zcode --version)" >> "$GITHUB_OUTPUT"
 
       - name: Prepare CLI capture artifact
         run: |
@@ -520,6 +558,8 @@ jobs:
             prompts/omp.md \
             prompts/openhands.md \
             prompts/opensquilla.md \
+            prompts/deepseek-harness.md \
+            prompts/zcode.md \
             "$RUNNER_TEMP/cli-captures/prompts/"
 
       - uses: actions/upload-artifact@v4
@@ -647,6 +687,7 @@ jobs:
           CLINE_CLI_VERSION: ${{ needs.capture-cli.outputs.cline_cli_version }}
           CLINE_SDK_VERSION: ${{ needs.capture-cli.outputs.cline_sdk_version }}
           CRUSH_VERSION: ${{ needs.capture-cli.outputs.crush_version }}
+          DEEPSEEK_HARNESS_VERSION: ${{ needs.capture-cli.outputs.deepseek_harness_version }}
           GEMINI_CLI_VERSION: ${{ needs.capture-cli.outputs.gemini_cli_version }}
           HERMES_AGENT_VERSION: ${{ needs.capture-cli.outputs.hermes_agent_version }}
           KILO_CODE_CLI_VERSION: ${{ needs.capture-cli.outputs.kilo_code_cli_version }}
@@ -660,6 +701,7 @@ jobs:
           QWEN_CODE_VERSION: ${{ needs.capture-cli.outputs.qwen_code_version }}
           GROK_CODE_CLI_VERSION: ${{ needs.capture-cli.outputs.grok_code_cli_version }}
           PI_VERSION: ${{ needs.capture-cli.outputs.pi_version }}
+          ZCODE_VERSION: ${{ needs.capture-cli.outputs.zcode_version }}
         run: |
           bun run metadata
           bun run readme
@@ -686,6 +728,8 @@ jobs:
           test -s prompts/omp.md
           test -s prompts/openhands.md
           test -s prompts/opensquilla.md
+          test -s prompts/deepseek-harness.md
+          test -s prompts/zcode.md
 
       - name: Commit changed snapshots
         run: |

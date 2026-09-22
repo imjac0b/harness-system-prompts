@@ -26,4 +26,6 @@ Automatically captures and versions system prompts from coding-agent harnesses.
 | MiMo Code | `0.1.14` | ✅ Captured | [View Markdown](prompts/mimo-code.md) |
 | Crush | `crush version v0.95.0` | ✅ Captured | [View Markdown](prompts/crush.md) |
 | Aider | `aider 0.86.2` | ✅ Captured | [View Markdown](prompts/aider.md) |
+| DeepSeek Harness | `unknown` | ⏳ Pending | [View Markdown](prompts/deepseek-harness.md) |
+| ZCode | `unknown` | ⏳ Pending | [View Markdown](prompts/zcode.md) |
 <!-- harness-results:end -->

@@ -179,6 +179,7 @@ const snapshotsByModel: Record<string, string> = {
   "capture-cline-cli": "cline-cli.md",
   "capture-cline-sdk": "cline-sdk.md",
   "capture-crush": "crush.md",
+  "capture-dsh": "deepseek-harness.md",
   "capture-gemini": "gemini-cli.md",
   "capture-grok": "grok-code-cli.md",
   "capture-hermes": "hermes-agent.md",
@@ -192,6 +193,7 @@ const snapshotsByModel: Record<string, string> = {
   "capture-opencode": "opencode.md",
   "capture-pi": "pi.md",
   "capture-qwen": "qwen-code.md",
+  "capture-zcode": "zcode.md",
 };
 
 export function snapshotForModel(model: unknown, fallback: string): string {
@@ -369,7 +371,9 @@ export async function handleRequest(request: Request): Promise<Response> {
                     ? extractHermes(payload)
                     : filename === "openclaw.md"
                       ? extractOpenClaw(payload)
-                      : extractChatCompletions(payload);
+                      : filename === "deepseek-harness.md" || filename === "zcode.md"
+                        ? extractRunnerEnvironment(payload)
+                        : extractChatCompletions(payload);
     await writeSnapshot(filename, sections);
     return chatCompletionsResponse(model, payload.stream === true);
   }

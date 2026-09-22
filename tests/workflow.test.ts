@@ -47,6 +47,10 @@ test("captures all CLI harnesses in one GitHub runner job", async () => {
   expect(workflow).toContain("test -s prompts/omp.md");
   expect(workflow).toContain("test -s prompts/openhands.md");
   expect(workflow).toContain("test -s prompts/opensquilla.md");
+  expect(workflow).toContain("test -s prompts/deepseek-harness.md");
+  expect(workflow).toContain("test -s prompts/zcode.md");
+  expect(workflow).toContain("@deepseek-ai/dsh@latest");
+  expect(workflow).toContain("@zcode/cli@latest");
   expect(workflow).toContain('echo "hermes_agent=${HERMES_VERSION%%$\'\\n\'*}" >> "$GITHUB_OUTPUT"');
 });
 

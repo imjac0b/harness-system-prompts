@@ -12,6 +12,7 @@ const harnesses = {
   codex: ["codex.md", "CODEX_VERSION"],
   codex_desktop: ["codex-desktop.md", "CODEX_DESKTOP_VERSION"],
   crush: ["crush.md", "CRUSH_VERSION"],
+  deepseek_harness: ["deepseek-harness.md", "DEEPSEEK_HARNESS_VERSION"],
   gemini_cli: ["gemini-cli.md", "GEMINI_CLI_VERSION"],
   grok_code_cli: ["grok-code-cli.md", "GROK_CODE_CLI_VERSION"],
   hermes_agent: ["hermes-agent.md", "HERMES_AGENT_VERSION"],
@@ -25,6 +26,7 @@ const harnesses = {
   opencode: ["opencode.md", "OPENCODE_VERSION"],
   pi: ["pi.md", "PI_VERSION"],
   qwen_code: ["qwen-code.md", "QWEN_CODE_VERSION"],
+  zcode: ["zcode.md", "ZCODE_VERSION"],
 } as const;
 
 const metadata = Object.fromEntries(
