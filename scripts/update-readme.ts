@@ -27,6 +27,7 @@ type Metadata = {
   pi: HarnessMetadata;
   qwen_code: HarnessMetadata;
   zcode: HarnessMetadata;
+  zcode_desktop: HarnessMetadata;
 };
 
 const startMarker = "<!-- harness-results:start -->";
@@ -61,6 +62,7 @@ export function renderResults(metadata: Metadata): string {
     ["Aider", metadata.aider, "prompts/aider.md"],
     ["DeepSeek Harness", metadata.deepseek_harness, "prompts/deepseek-harness.md"],
     ["ZCode", metadata.zcode, "prompts/zcode.md"],
+    ["ZCode Desktop", metadata.zcode_desktop, "prompts/zcode-desktop.md"],
   ] as const;
 
   return [

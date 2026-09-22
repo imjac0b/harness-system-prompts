@@ -28,4 +28,5 @@ Automatically captures and versions system prompts from coding-agent harnesses.
 | Aider | `aider 0.86.2` | ✅ Captured | [View Markdown](prompts/aider.md) |
 | DeepSeek Harness | `unknown` | ⏳ Pending | [View Markdown](prompts/deepseek-harness.md) |
 | ZCode | `unknown` | ⏳ Pending | [View Markdown](prompts/zcode.md) |
+| ZCode Desktop | `unknown` | ⏳ Pending | [View Markdown](prompts/zcode-desktop.md) |
 <!-- harness-results:end -->

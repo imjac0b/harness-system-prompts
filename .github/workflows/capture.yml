@@ -26,6 +26,7 @@ jobs:
       codex_version: ${{ steps.versions.outputs.codex }}
       crush_version: ${{ steps.versions.outputs.crush }}
       deepseek_harness_version: ${{ steps.versions.outputs.deepseek_harness }}
+      zcode_desktop_version: ${{ steps.versions.outputs.zcode_desktop }}
       gemini_cli_version: ${{ steps.versions.outputs.gemini_cli }}
       grok_code_cli_version: ${{ steps.versions.outputs.grok_code_cli }}
       hermes_agent_version: ${{ steps.versions.outputs.hermes_agent }}
@@ -340,6 +341,14 @@ jobs:
             > .zcode/config.json
           zcode -p "Reply with the word captured." --output-format json
 
+      - name: Capture ZCode Desktop instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          HOME: ${{ runner.temp }}/zcode-home
+        run: |
+          node -e 'const fs=require("node:fs"); const p=".zcode/config.json"; const c=JSON.parse(fs.readFileSync(p,"utf8")); c.provider.capture.models={"capture-zcode-desktop":{}}; c.model="capture/capture-zcode-desktop"; fs.writeFileSync(p, JSON.stringify(c))'
+          zcode -p "Reply with the word captured." --surface desktop --output-format json
+
       - name: Capture Codex instructions
         working-directory: ${{ runner.temp }}/harness-sandbox
         env:
@@ -533,6 +542,7 @@ jobs:
           echo "hermes_agent=${HERMES_VERSION%%$'\n'*}" >> "$GITHUB_OUTPUT"
           echo "deepseek_harness=$(dsh --version)" >> "$GITHUB_OUTPUT"
           echo "zcode=$(zcode --version)" >> "$GITHUB_OUTPUT"
+          echo "zcode_desktop=$(zcode --version)" >> "$GITHUB_OUTPUT"
 
       - name: Prepare CLI capture artifact
         run: |
@@ -560,6 +570,7 @@ jobs:
             prompts/opensquilla.md \
             prompts/deepseek-harness.md \
             prompts/zcode.md \
+            prompts/zcode-desktop.md \
             "$RUNNER_TEMP/cli-captures/prompts/"
 
       - uses: actions/upload-artifact@v4
@@ -702,6 +713,7 @@ jobs:
           GROK_CODE_CLI_VERSION: ${{ needs.capture-cli.outputs.grok_code_cli_version }}
           PI_VERSION: ${{ needs.capture-cli.outputs.pi_version }}
           ZCODE_VERSION: ${{ needs.capture-cli.outputs.zcode_version }}
+          ZCODE_DESKTOP_VERSION: ${{ needs.capture-cli.outputs.zcode_desktop_version }}
         run: |
           bun run metadata
           bun run readme
@@ -730,6 +742,7 @@ jobs:
           test -s prompts/opensquilla.md
           test -s prompts/deepseek-harness.md
           test -s prompts/zcode.md
+          test -s prompts/zcode-desktop.md
 
       - name: Commit changed snapshots
         run: |

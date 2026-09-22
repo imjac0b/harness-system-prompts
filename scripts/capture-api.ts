@@ -194,6 +194,7 @@ const snapshotsByModel: Record<string, string> = {
   "capture-pi": "pi.md",
   "capture-qwen": "qwen-code.md",
   "capture-zcode": "zcode.md",
+  "capture-zcode-desktop": "zcode-desktop.md",
 };
 
 export function snapshotForModel(model: unknown, fallback: string): string {
@@ -371,7 +372,7 @@ export async function handleRequest(request: Request): Promise<Response> {
                     ? extractHermes(payload)
                     : filename === "openclaw.md"
                       ? extractOpenClaw(payload)
-                      : filename === "deepseek-harness.md" || filename === "zcode.md"
+                      : filename === "deepseek-harness.md" || filename === "zcode.md" || filename === "zcode-desktop.md"
                         ? extractRunnerEnvironment(payload)
                         : extractChatCompletions(payload);
     await writeSnapshot(filename, sections);

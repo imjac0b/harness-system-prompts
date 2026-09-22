@@ -27,6 +27,7 @@ const harnesses = {
   pi: ["pi.md", "PI_VERSION"],
   qwen_code: ["qwen-code.md", "QWEN_CODE_VERSION"],
   zcode: ["zcode.md", "ZCODE_VERSION"],
+  zcode_desktop: ["zcode-desktop.md", "ZCODE_DESKTOP_VERSION"],
 } as const;
 
 const metadata = Object.fromEntries(

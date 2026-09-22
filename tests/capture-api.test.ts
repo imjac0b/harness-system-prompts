@@ -151,6 +151,7 @@ test("routes added harness models to distinct snapshots", () => {
   expect(snapshotForModel("capture-hermes", "fallback.md")).toBe("hermes-agent.md");
   expect(snapshotForModel("capture-dsh", "fallback.md")).toBe("deepseek-harness.md");
   expect(snapshotForModel("capture-zcode", "fallback.md")).toBe("zcode.md");
+  expect(snapshotForModel("capture-zcode-desktop", "fallback.md")).toBe("zcode-desktop.md");
 });
 
 test("normalizes Codex Desktop skill paths", () => {

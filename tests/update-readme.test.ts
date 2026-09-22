@@ -25,6 +25,7 @@ const metadata = {
   pi: { captured: false, version: "unknown" },
   qwen_code: { captured: false, version: "unknown" },
   zcode: { captured: false, version: "unknown" },
+  zcode_desktop: { captured: false, version: "unknown" },
 };
 
 test("renders linked harness results", () => {
@@ -48,6 +49,7 @@ test("renders linked harness results", () => {
   expect(table).toContain("| Aider | `unknown` | ⏳ Pending | [View Markdown](prompts/aider.md) |");
   expect(table).toContain("| DeepSeek Harness | `unknown` | ⏳ Pending | [View Markdown](prompts/deepseek-harness.md) |");
   expect(table).toContain("| ZCode | `unknown` | ⏳ Pending | [View Markdown](prompts/zcode.md) |");
+  expect(table).toContain("| ZCode Desktop | `unknown` | ⏳ Pending | [View Markdown](prompts/zcode-desktop.md) |");
 });
 
 test("replaces only the marked README table", () => {
