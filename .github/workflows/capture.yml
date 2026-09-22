@@ -65,6 +65,11 @@ jobs:
 
       - name: Install harnesses
         run: |
+          # dsh's sandbox-local plugin (mounted by every profile, including
+          # headless) fails to boot on Linux without bwrap or Landlock available.
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap
+
           bun add --global \
             @anthropic-ai/claude-code@latest \
             @earendil-works/pi-coding-agent@latest \
@@ -338,8 +343,12 @@ jobs:
             '        baseURL: http://127.0.0.1:8787/v1' \
             '        models:' \
             '          - id: capture-dsh' \
+            '- id: agent-default-model' \
+            '  config:' \
+            '    provider: mock' \
+            '    model: capture-dsh' \
             > "$DSH_HOME/profiles/headless/cordis.patch.yml"
-          dsh --profile headless --json "Reply with the word captured."
+          dsh --profile headless "Reply with the word captured."
 
       - name: Capture ZCode instructions
         working-directory: ${{ runner.temp }}/harness-sandbox
