@@ -10,6 +10,7 @@ const metadata = {
   codex: { captured: true, version: "codex-cli 0.144.4" },
   codex_desktop: { captured: true, version: "ChatGPT 26.707.72221 (codex-cli 0.144.2)" },
   crush: { captured: false, version: "unknown" },
+  deepseek_harness: { captured: false, version: "unknown" },
   gemini_cli: { captured: false, version: "unknown" },
   grok_code_cli: { captured: false, version: "unknown" },
   hermes_agent: { captured: false, version: "unknown" },
@@ -23,6 +24,8 @@ const metadata = {
   opencode: { captured: false, version: "unknown" },
   pi: { captured: false, version: "unknown" },
   qwen_code: { captured: false, version: "unknown" },
+  zcode: { captured: false, version: "unknown" },
+  zcode_desktop: { captured: false, version: "unknown" },
 };
 
 test("renders linked harness results", () => {
@@ -44,6 +47,9 @@ test("renders linked harness results", () => {
   expect(table).toContain("| MiMo Code | `unknown` | ⏳ Pending | [View Markdown](prompts/mimo-code.md) |");
   expect(table).toContain("| Crush | `unknown` | ⏳ Pending | [View Markdown](prompts/crush.md) |");
   expect(table).toContain("| Aider | `unknown` | ⏳ Pending | [View Markdown](prompts/aider.md) |");
+  expect(table).toContain("| DeepSeek Harness | `unknown` | ⏳ Pending | [View Markdown](prompts/deepseek-harness.md) |");
+  expect(table).toContain("| ZCode | `unknown` | ⏳ Pending | [View Markdown](prompts/zcode.md) |");
+  expect(table).toContain("| ZCode Desktop | `unknown` | ⏳ Pending | [View Markdown](prompts/zcode-desktop.md) |");
 });
 
 test("replaces only the marked README table", () => {

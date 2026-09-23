@@ -38,7 +38,7 @@ Push back on risk-hidden plans or wrong claims: name risk, show evidence, propos
 # Internal URLs
 Most FS/bash tools auto-resolve these to FS paths.
 - `rule://<name>`: details
-- `agent://<id>`: output artifact; `/<child>`: nested-subagent output; otherwise `/<path>`: JSON field
+- `agent://<id>`: output artifact (nested subagent: dotted id `agent://Parent.Child`); `/<key>/<index>/…`: JSON path (`agent://Scout/reports/0/data`)
 - `history://<id>`: read-only agent transcript (live|parked|released); bare `history://`: all agents. Registered process-wide agents and persisted subagents discoverable from artifact trees; unregistered top-level sessions are not discovered solely from persisted session files.
 - `artifact://<id>`: content
 - `local://<name>.md`: plan artifacts/shared subagent content

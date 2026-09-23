@@ -25,6 +25,8 @@ jobs:
       cline_sdk_version: ${{ steps.versions.outputs.cline_sdk }}
       codex_version: ${{ steps.versions.outputs.codex }}
       crush_version: ${{ steps.versions.outputs.crush }}
+      deepseek_harness_version: ${{ steps.versions.outputs.deepseek_harness }}
+      zcode_desktop_version: ${{ steps.versions.outputs.zcode_desktop }}
       gemini_cli_version: ${{ steps.versions.outputs.gemini_cli }}
       grok_code_cli_version: ${{ steps.versions.outputs.grok_code_cli }}
       hermes_agent_version: ${{ steps.versions.outputs.hermes_agent }}
@@ -38,6 +40,7 @@ jobs:
       openclaw_version: ${{ steps.versions.outputs.openclaw }}
       pi_version: ${{ steps.versions.outputs.pi }}
       qwen_code_version: ${{ steps.versions.outputs.qwen_code }}
+      zcode_version: ${{ steps.versions.outputs.zcode }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -53,11 +56,20 @@ jobs:
 
       - uses: astral-sh/setup-uv@v6
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+
       - name: Install project dependencies
         run: bun install --frozen-lockfile
 
       - name: Install harnesses
         run: |
+          # dsh's sandbox-local plugin (mounted by every profile, including
+          # headless) fails to boot on Linux without bwrap or Landlock available.
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap
+
           bun add --global \
             @anthropic-ai/claude-code@latest \
             @earendil-works/pi-coding-agent@latest \
@@ -69,11 +81,15 @@ jobs:
             @oh-my-pi/pi-coding-agent@latest \
             cline@latest \
             openclaw@latest \
-            opencode-ai@latest
+            opencode-ai@latest \
+            @deepseek-ai/dsh@latest
           npm install --global \
             @charmland/crush@latest \
             @mimo-ai/cli@latest
-          uv tool install --python 3.13 kimi-cli
+          # kimi-cli is archived upstream; newer releases are a stub that
+          # prints a migration notice instead of running. Pin the last real
+          # release until this captures the new Kimi Code CLI instead.
+          uv tool install --python 3.13 kimi-cli==1.50.0
           uv tool install --python 3.13 hermes-agent
           uv tool install --python 3.12 openhands
           uv tool install --python 3.12 \
@@ -92,6 +108,14 @@ jobs:
           cd "$RUNNER_TEMP/cline-sdk-runner"
           bun init -y
           bun add @cline/sdk@latest
+
+          # @zcode/cli is not published to npm (private workspace package); build
+          # its "dist/zcode.cjs" bundle from source instead.
+          git clone --depth 1 https://github.com/zai-org/zcode.git "$RUNNER_TEMP/zcode-src"
+          cd "$RUNNER_TEMP/zcode-src"
+          pnpm install --filter "@zcode/cli..." --frozen-lockfile
+          pnpm --filter "@zcode/cli..." build
+          echo "ZCODE_CLI_BIN=$RUNNER_TEMP/zcode-src/apps/zcode-cli/packages/cli/dist/zcode.cjs" >> "$GITHUB_ENV"
 
       - name: Start local capture APIs
         run: |
@@ -304,6 +328,60 @@ jobs:
             --no-check-model-accepts-settings \
             --message "Reply with the word captured."
 
+      - name: Capture DeepSeek Harness instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          DSH_HOME: ${{ runner.temp }}/dsh-home
+          DSH_TELEMETRY_DISABLED: "1"
+          MOCK_API_KEY: local-capture-only
+        run: |
+          mkdir -p "$DSH_HOME/profiles/headless"
+          printf '%s\n' \
+            '- id: llm-pi-ai' \
+            '  config:' \
+            '    providers:' \
+            '      mock:' \
+            '        apiKeyEnv: MOCK_API_KEY' \
+            '        api: openai-completions' \
+            '        baseURL: http://127.0.0.1:8787/v1' \
+            '        models:' \
+            '          - id: capture-dsh' \
+            '- id: agent-default-model' \
+            '  config:' \
+            '    provider: mock' \
+            '    model: capture-dsh' \
+            > "$DSH_HOME/profiles/headless/cordis.patch.yml"
+          dsh --profile headless "Reply with the word captured."
+
+      - name: Capture ZCode instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          HOME: ${{ runner.temp }}/zcode-home
+        run: |
+          # Provider/model selection is read once from the legacy personal CLI
+          # config ($HOME/.zcode/cli/config.json) and migrated into ZCode's
+          # modern provider store on first use; it is NOT the project-level
+          # .zcode/config.json (a different, unrelated schema).
+          mkdir -p "$HOME/.zcode/cli"
+          printf '%s\n' \
+            '{"provider":{"capture":{"kind":"openai-compatible","options":{"baseURL":"http://127.0.0.1:8787/v1","apiKey":"local-capture-only"},"models":{"capture-zcode":{}}}},"model":"capture/capture-zcode"}' \
+            > "$HOME/.zcode/cli/config.json"
+          node "$ZCODE_CLI_BIN" -p "Reply with the word captured." --output-format json
+
+      - name: Capture ZCode Desktop instructions
+        working-directory: ${{ runner.temp }}/harness-sandbox
+        env:
+          HOME: ${{ runner.temp }}/zcode-desktop-home
+        run: |
+          # A separate $HOME avoids the "already migrated" personal provider
+          # store left behind by the terminal-surface capture above, so this
+          # run's legacy config is imported fresh with its own default model.
+          mkdir -p "$HOME/.zcode/cli"
+          printf '%s\n' \
+            '{"provider":{"capture":{"kind":"openai-compatible","options":{"baseURL":"http://127.0.0.1:8787/v1","apiKey":"local-capture-only"},"models":{"capture-zcode-desktop":{}}}},"model":"capture/capture-zcode-desktop"}' \
+            > "$HOME/.zcode/cli/config.json"
+          node "$ZCODE_CLI_BIN" -p "Reply with the word captured." --surface desktop --output-format json
+
       - name: Capture Codex instructions
         working-directory: ${{ runner.temp }}/harness-sandbox
         env:
@@ -495,6 +573,9 @@ jobs:
           echo "openclaw=$(openclaw --version)" >> "$GITHUB_OUTPUT"
           HERMES_VERSION=$(hermes --version)
           echo "hermes_agent=${HERMES_VERSION%%$'\n'*}" >> "$GITHUB_OUTPUT"
+          echo "deepseek_harness=$(dsh --version)" >> "$GITHUB_OUTPUT"
+          echo "zcode=$(node "$ZCODE_CLI_BIN" --version)" >> "$GITHUB_OUTPUT"
+          echo "zcode_desktop=$(node "$ZCODE_CLI_BIN" --version)" >> "$GITHUB_OUTPUT"
 
       - name: Prepare CLI capture artifact
         run: |
@@ -520,6 +601,9 @@ jobs:
             prompts/omp.md \
             prompts/openhands.md \
             prompts/opensquilla.md \
+            prompts/deepseek-harness.md \
+            prompts/zcode.md \
+            prompts/zcode-desktop.md \
             "$RUNNER_TEMP/cli-captures/prompts/"
 
       - uses: actions/upload-artifact@v4
@@ -647,6 +731,7 @@ jobs:
           CLINE_CLI_VERSION: ${{ needs.capture-cli.outputs.cline_cli_version }}
           CLINE_SDK_VERSION: ${{ needs.capture-cli.outputs.cline_sdk_version }}
           CRUSH_VERSION: ${{ needs.capture-cli.outputs.crush_version }}
+          DEEPSEEK_HARNESS_VERSION: ${{ needs.capture-cli.outputs.deepseek_harness_version }}
           GEMINI_CLI_VERSION: ${{ needs.capture-cli.outputs.gemini_cli_version }}
           HERMES_AGENT_VERSION: ${{ needs.capture-cli.outputs.hermes_agent_version }}
           KILO_CODE_CLI_VERSION: ${{ needs.capture-cli.outputs.kilo_code_cli_version }}
@@ -660,6 +745,8 @@ jobs:
           QWEN_CODE_VERSION: ${{ needs.capture-cli.outputs.qwen_code_version }}
           GROK_CODE_CLI_VERSION: ${{ needs.capture-cli.outputs.grok_code_cli_version }}
           PI_VERSION: ${{ needs.capture-cli.outputs.pi_version }}
+          ZCODE_VERSION: ${{ needs.capture-cli.outputs.zcode_version }}
+          ZCODE_DESKTOP_VERSION: ${{ needs.capture-cli.outputs.zcode_desktop_version }}
         run: |
           bun run metadata
           bun run readme
@@ -686,6 +773,9 @@ jobs:
           test -s prompts/omp.md
           test -s prompts/openhands.md
           test -s prompts/opensquilla.md
+          test -s prompts/deepseek-harness.md
+          test -s prompts/zcode.md
+          test -s prompts/zcode-desktop.md
 
       - name: Commit changed snapshots
         run: |

@@ -12,6 +12,7 @@ type Metadata = {
   codex: HarnessMetadata;
   codex_desktop: HarnessMetadata;
   crush: HarnessMetadata;
+  deepseek_harness: HarnessMetadata;
   gemini_cli: HarnessMetadata;
   grok_code_cli: HarnessMetadata;
   hermes_agent: HarnessMetadata;
@@ -25,6 +26,8 @@ type Metadata = {
   opencode: HarnessMetadata;
   pi: HarnessMetadata;
   qwen_code: HarnessMetadata;
+  zcode: HarnessMetadata;
+  zcode_desktop: HarnessMetadata;
 };
 
 const startMarker = "<!-- harness-results:start -->";
@@ -57,6 +60,9 @@ export function renderResults(metadata: Metadata): string {
     ["MiMo Code", metadata.mimo_code, "prompts/mimo-code.md"],
     ["Crush", metadata.crush, "prompts/crush.md"],
     ["Aider", metadata.aider, "prompts/aider.md"],
+    ["DeepSeek Harness", metadata.deepseek_harness, "prompts/deepseek-harness.md"],
+    ["ZCode", metadata.zcode, "prompts/zcode.md"],
+    ["ZCode Desktop", metadata.zcode_desktop, "prompts/zcode-desktop.md"],
   ] as const;
 
   return [
