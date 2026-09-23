@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { extractAnthropic, extractChatCompletions, extractCline, extractCodexDesktop, extractCrush, extractGemini, extractHermes, extractKimi, extractMiMo, extractOmp, extractOpenAI, extractOpenClaw, extractOpenHands, extractRunnerEnvironment, snapshotForModel, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
+import { extractAnthropic, extractChatCompletions, extractCline, extractCodexDesktop, extractCrush, extractDeepseekHarness, extractGemini, extractHermes, extractKimi, extractMiMo, extractOmp, extractOpenAI, extractOpenClaw, extractOpenHands, extractRunnerEnvironment, snapshotForModel, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
 
 test("extracts OpenAI instructions and developer input", () => {
   expect(
@@ -106,6 +106,20 @@ test("ignores Crush title generation and extracts the agent prompt", () => {
     { role: "user", content: "Reply with the word captured." },
   ] })).toEqual([
     ["system 1", "You are Crush.\n\nWorking directory: <WORKSPACE>"],
+  ]);
+});
+
+test("ignores DeepSeek Harness title generation and extracts the agent prompt", () => {
+  expect(extractDeepseekHarness({ messages: [
+    { role: "system", content: "Create a concise title for an AI coding-assistant session from the supplied human messages.\nReturn only the title on one line." },
+    { role: "user", content: "Reply with the word captured." },
+  ] })).toEqual([]);
+
+  expect(extractDeepseekHarness({ messages: [
+    { role: "system", content: "You are a coding agent powered by the capture-dsh model.\nWorking directory: /tmp/work" },
+    { role: "user", content: "Reply with the word captured." },
+  ] })).toEqual([
+    ["system 1", "You are a coding agent powered by the capture-dsh model.\nWorking directory: <WORKSPACE>"],
   ]);
 });
 

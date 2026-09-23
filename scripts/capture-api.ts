@@ -144,6 +144,14 @@ export function extractCrush(payload: JsonObject): Section[] {
   return isTitleGeneration ? [] : extractRunnerEnvironment(payload);
 }
 
+export function extractDeepseekHarness(payload: JsonObject): Section[] {
+  const titlePromptPrefix = "Create a concise title for an AI coding-assistant session";
+  const isTitleGeneration = extractChatCompletions(payload).some(([, content]) =>
+    content.startsWith(titlePromptPrefix)
+  );
+  return isTitleGeneration ? [] : extractRunnerEnvironment(payload);
+}
+
 export function extractMiMo(payload: JsonObject): Section[] {
   return extractRunnerEnvironment(payload).map(([label, content]) => [
     label,
@@ -372,9 +380,11 @@ export async function handleRequest(request: Request): Promise<Response> {
                     ? extractHermes(payload)
                     : filename === "openclaw.md"
                       ? extractOpenClaw(payload)
-                      : filename === "deepseek-harness.md" || filename === "zcode.md" || filename === "zcode-desktop.md"
-                        ? extractRunnerEnvironment(payload)
-                        : extractChatCompletions(payload);
+                      : filename === "deepseek-harness.md"
+                        ? extractDeepseekHarness(payload)
+                        : filename === "zcode.md" || filename === "zcode-desktop.md"
+                          ? extractRunnerEnvironment(payload)
+                          : extractChatCompletions(payload);
     await writeSnapshot(filename, sections);
     return chatCompletionsResponse(model, payload.stream === true);
   }
