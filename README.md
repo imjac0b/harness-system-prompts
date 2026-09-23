@@ -15,7 +15,7 @@ Automatically captures and versions system prompts from coding-agent harnesses.
 | Kilo Code CLI | `7.7.7` | ✅ Captured | [View Markdown](prompts/kilo-code-cli.md) |
 | OpenClaw | `OpenClaw 2026.9.5 (ec9c1a1)` | ✅ Captured | [View Markdown](prompts/openclaw.md) |
 | Hermes Agent | `Hermes Agent v0.19.0 (2026.7.20)` | ✅ Captured | [View Markdown](prompts/hermes-agent.md) |
-| Kimi CLI | `kimi, version 1.50.0` | ✅ Captured | [View Markdown](prompts/kimi-cli.md) |
+| Kimi CLI | `2.0.2` | ✅ Captured | [View Markdown](prompts/kimi-cli.md) |
 | Qwen Code | `0.24.4` | ✅ Captured | [View Markdown](prompts/qwen-code.md) |
 | Grok Code CLI | `grok 1.0.41 (4220f3b224a6)` | ✅ Captured | [View Markdown](prompts/grok-code-cli.md) |
 | Pi | `0.87.1` | ✅ Captured | [View Markdown](prompts/pi.md) |
