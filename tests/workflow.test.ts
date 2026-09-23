@@ -29,7 +29,8 @@ test("captures all CLI harnesses in one GitHub runner job", async () => {
   expect(workflow).toContain("@oh-my-pi/pi-coding-agent@latest");
   expect(workflow).toContain("@charmland/crush@latest");
   expect(workflow).toContain("@mimo-ai/cli@latest");
-  expect(workflow).toContain("uv tool install --python 3.13 kimi-cli==1.50.0");
+  expect(workflow).toContain("https://code.kimi.com/kimi-code/install.sh");
+  expect(workflow).toContain('kimi -p "Reply with the word captured."');
   expect(workflow).toContain("uv tool install --python 3.13 hermes-agent");
   expect(workflow).toContain("uv tool install --python 3.12 openhands");
   expect(workflow).toContain("opensquilla-0.5.0rc4-py3-none-any.whl");

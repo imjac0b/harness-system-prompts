@@ -86,10 +86,9 @@ jobs:
           npm install --global \
             @charmland/crush@latest \
             @mimo-ai/cli@latest
-          # kimi-cli is archived upstream; newer releases are a stub that
-          # prints a migration notice instead of running. Pin the last real
-          # release until this captures the new Kimi Code CLI instead.
-          uv tool install --python 3.13 kimi-cli==1.50.0
+          # kimi-cli (Python) is archived upstream in favor of Kimi Code CLI.
+          curl -fsSL https://code.kimi.com/kimi-code/install.sh | KIMI_NO_MODIFY_PATH=1 bash
+          echo "$HOME/.kimi-code/bin" >> "$GITHUB_PATH"
           uv tool install --python 3.13 hermes-agent
           uv tool install --python 3.12 openhands
           uv tool install --python 3.12 \
@@ -436,10 +435,25 @@ jobs:
       - name: Capture Kimi CLI instructions
         working-directory: ${{ runner.temp }}/harness-sandbox
         env:
-          KIMI_CLI_NO_AUTO_UPDATE: "1"
+          KIMI_CODE_HOME: ${{ runner.temp }}/kimi-code-home
+          KIMI_DISABLE_TELEMETRY: "1"
         run: |
-          kimi --config '{"default_model":"capture-kimi","telemetry":false,"providers":{"capture":{"type":"openai_legacy","base_url":"http://127.0.0.1:8787/v1","api_key":"local-capture-only"}},"models":{"capture-kimi":{"provider":"capture","model":"capture-kimi","max_context_size":128000}}}' \
-            --quiet -p "Reply with the word captured."
+          mkdir -p "$KIMI_CODE_HOME"
+          printf '%s\n' \
+            'defaultProvider = "capture"' \
+            'defaultModel = "capture-kimi"' \
+            '' \
+            '[providers.capture]' \
+            'type = "openai"' \
+            'baseUrl = "http://127.0.0.1:8787/v1"' \
+            'apiKey = "local-capture-only"' \
+            '' \
+            '[models.capture-kimi]' \
+            'provider = "capture"' \
+            'model = "capture-kimi"' \
+            'maxContextSize = 128000' \
+            > "$KIMI_CODE_HOME/config.toml"
+          kimi -p "Reply with the word captured."
 
       - name: Capture Qwen Code instructions
         working-directory: ${{ runner.temp }}/harness-sandbox
