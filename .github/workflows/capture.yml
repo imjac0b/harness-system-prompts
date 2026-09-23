@@ -86,7 +86,10 @@ jobs:
           npm install --global \
             @charmland/crush@latest \
             @mimo-ai/cli@latest
-          uv tool install --python 3.13 kimi-cli
+          # kimi-cli is archived upstream; newer releases are a stub that
+          # prints a migration notice instead of running. Pin the last real
+          # release until this captures the new Kimi Code CLI instead.
+          uv tool install --python 3.13 kimi-cli==1.50.0
           uv tool install --python 3.13 hermes-agent
           uv tool install --python 3.12 openhands
           uv tool install --python 3.12 \
