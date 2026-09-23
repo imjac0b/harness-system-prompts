@@ -264,7 +264,7 @@ SOUL.md: persona/tone. Follow it unless higher-priority instructions override.
 <!-- /openclaw:attempt:STABLE -->
 <!-- openclaw:attempt:DYNAMIC -->
 ## Temporal Context
-Current date: 2026-09-21
+Current date: 2026-09-23
 Time zone: UTC
 For the exact current time, use `session_status`.
 ## Delegation

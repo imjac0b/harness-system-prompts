@@ -5,28 +5,28 @@ Automatically captures and versions system prompts from coding-agent harnesses.
 <!-- harness-results:start -->
 | Harness | Version | Status | System prompt |
 | --- | --- | --- | --- |
-| Codex CLI | `codex-cli 0.155.1` | ✅ Captured | [View Markdown](prompts/codex.md) |
-| Codex Desktop | `ChatGPT 26.915.31945 (codex-cli 0.155.0-alpha.9.2)` | ✅ Captured | [View Markdown](prompts/codex-desktop.md) |
-| Claude Code | `2.1.278 (Claude Code)` | ✅ Captured | [View Markdown](prompts/claude-code.md) |
-| Cline CLI | `3.0.62` | ✅ Captured | [View Markdown](prompts/cline-cli.md) |
-| Cline SDK | `0.0.83` | ✅ Captured | [View Markdown](prompts/cline-sdk.md) |
+| Codex CLI | `codex-cli 0.156.0` | ✅ Captured | [View Markdown](prompts/codex.md) |
+| Codex Desktop | `ChatGPT 26.917.61114 (codex-cli 0.155.0-alpha.16)` | ✅ Captured | [View Markdown](prompts/codex-desktop.md) |
+| Claude Code | `2.1.280 (Claude Code)` | ✅ Captured | [View Markdown](prompts/claude-code.md) |
+| Cline CLI | `3.0.64` | ✅ Captured | [View Markdown](prompts/cline-cli.md) |
+| Cline SDK | `0.0.85` | ✅ Captured | [View Markdown](prompts/cline-sdk.md) |
 | Gemini CLI | `0.60.0` | ✅ Captured | [View Markdown](prompts/gemini-cli.md) |
-| OpenCode | `1.18.31` | ✅ Captured | [View Markdown](prompts/opencode.md) |
-| Kilo Code CLI | `7.7.5` | ✅ Captured | [View Markdown](prompts/kilo-code-cli.md) |
+| OpenCode | `1.18.32` | ✅ Captured | [View Markdown](prompts/opencode.md) |
+| Kilo Code CLI | `7.7.7` | ✅ Captured | [View Markdown](prompts/kilo-code-cli.md) |
 | OpenClaw | `OpenClaw 2026.9.5 (ec9c1a1)` | ✅ Captured | [View Markdown](prompts/openclaw.md) |
 | Hermes Agent | `Hermes Agent v0.19.0 (2026.7.20)` | ✅ Captured | [View Markdown](prompts/hermes-agent.md) |
 | Kimi CLI | `kimi, version 1.50.0` | ✅ Captured | [View Markdown](prompts/kimi-cli.md) |
-| Qwen Code | `0.24.2` | ✅ Captured | [View Markdown](prompts/qwen-code.md) |
-| Grok Code CLI | `grok 1.0.40 (eb1a2256660d)` | ✅ Captured | [View Markdown](prompts/grok-code-cli.md) |
-| Pi | `0.86.1` | ✅ Captured | [View Markdown](prompts/pi.md) |
-| oh-my-pi | `omp/18.2.7` | ✅ Captured | [View Markdown](prompts/omp.md) |
+| Qwen Code | `0.24.4` | ✅ Captured | [View Markdown](prompts/qwen-code.md) |
+| Grok Code CLI | `grok 1.0.41 (4220f3b224a6)` | ✅ Captured | [View Markdown](prompts/grok-code-cli.md) |
+| Pi | `0.87.1` | ✅ Captured | [View Markdown](prompts/pi.md) |
+| oh-my-pi | `omp/18.2.10` | ✅ Captured | [View Markdown](prompts/omp.md) |
 | OpenHands CLI | `OpenHands CLI 1.16.0` | ✅ Captured | [View Markdown](prompts/openhands.md) |
 | OpenSquilla | `0.5.0rc4` | ✅ Captured | [View Markdown](prompts/opensquilla.md) |
 | Agent Zero | `v2.4` | ✅ Captured | [View Markdown](prompts/agent-zero.md) |
-| MiMo Code | `0.1.14` | ✅ Captured | [View Markdown](prompts/mimo-code.md) |
-| Crush | `crush version v0.95.0` | ✅ Captured | [View Markdown](prompts/crush.md) |
+| MiMo Code | `0.1.15` | ✅ Captured | [View Markdown](prompts/mimo-code.md) |
+| Crush | `crush version v0.96.1` | ✅ Captured | [View Markdown](prompts/crush.md) |
 | Aider | `aider 0.86.2` | ✅ Captured | [View Markdown](prompts/aider.md) |
-| DeepSeek Harness | `unknown` | ⏳ Pending | [View Markdown](prompts/deepseek-harness.md) |
-| ZCode | `unknown` | ⏳ Pending | [View Markdown](prompts/zcode.md) |
-| ZCode Desktop | `unknown` | ⏳ Pending | [View Markdown](prompts/zcode-desktop.md) |
+| DeepSeek Harness | `0.1.5-rc.2` | ✅ Captured | [View Markdown](prompts/deepseek-harness.md) |
+| ZCode | `0.16.9` | ✅ Captured | [View Markdown](prompts/zcode.md) |
+| ZCode Desktop | `0.16.9` | ✅ Captured | [View Markdown](prompts/zcode-desktop.md) |
 <!-- harness-results:end -->
