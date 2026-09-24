@@ -7,6 +7,7 @@ type Metadata = {
   agent_zero: HarnessMetadata;
   aider: HarnessMetadata;
   claude_code: HarnessMetadata;
+  claude_code_desktop: HarnessMetadata;
   cline_cli: HarnessMetadata;
   cline_sdk: HarnessMetadata;
   codex: HarnessMetadata;
@@ -42,6 +43,7 @@ export function renderResults(metadata: Metadata): string {
     ["Codex CLI", metadata.codex, "prompts/codex.md"],
     ["Codex Desktop", metadata.codex_desktop, "prompts/codex-desktop.md"],
     ["Claude Code", metadata.claude_code, "prompts/claude-code.md"],
+    ["Claude Code Desktop", metadata.claude_code_desktop, "prompts/claude-code-desktop.md"],
     ["Cline CLI", metadata.cline_cli, "prompts/cline-cli.md"],
     ["Cline SDK", metadata.cline_sdk, "prompts/cline-sdk.md"],
     ["Gemini CLI", metadata.gemini_cli, "prompts/gemini-cli.md"],

@@ -14,8 +14,17 @@ test("captures Codex Desktop on macOS and publishes one combined update", async 
   expect(workflow).toContain("runs-on: macos-latest");
   expect(workflow).toContain("https://persistent.oaistatic.com/codex-app-prod/Codex.dmg");
   expect(workflow).toContain("run: bun run capture-codex-desktop");
-  expect(workflow).toContain("needs: [capture-cli, capture-codex-desktop]");
   expect(workflow).toContain("test -s prompts/codex-desktop.md");
+});
+
+test("captures Claude Code Desktop on macOS and publishes one combined update", async () => {
+  const workflow = await Bun.file(".github/workflows/capture.yml").text();
+  expect(workflow).toContain("capture-claude-code-desktop:");
+  expect(workflow).toContain("https://downloads.claude.ai/releases/darwin/universal/RELEASES.json");
+  expect(workflow).toContain("run: bun run capture-claude-code-desktop");
+  expect(workflow).toContain("needs: [capture-cli, capture-codex-desktop, capture-claude-code-desktop]");
+  expect(workflow).toContain("CLAUDE_CODE_DESKTOP_VERSION: ${{ needs.capture-claude-code-desktop.outputs.version }}");
+  expect(workflow).toContain("test -s prompts/claude-code-desktop.md");
 });
 
 test("captures all CLI harnesses in one GitHub runner job", async () => {

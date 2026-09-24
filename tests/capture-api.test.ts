@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { extractAnthropic, extractChatCompletions, extractCline, extractCodexDesktop, extractCrush, extractDeepseekHarness, extractGemini, extractHermes, extractKimi, extractMiMo, extractOmp, extractOpenAI, extractOpenClaw, extractOpenHands, extractRunnerEnvironment, snapshotForModel, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
+import { extractAnthropic, extractChatCompletions, extractCline, extractCodexDesktop, extractCrush, extractDeepseekHarness, extractGemini, extractHermes, extractKimi, extractMiMo, extractOmp, extractOpenAI, extractOpenClaw, extractOpenHands, extractRunnerEnvironment, snapshotForAnthropic, snapshotForModel, snapshotForOpenAI, writeSnapshot } from "../scripts/capture-api";
 
 test("extracts OpenAI instructions and developer input", () => {
   expect(
@@ -27,6 +27,12 @@ test("extracts Anthropic text blocks", () => {
       "system",
       "x-anthropic-billing-header: cc_version=2.1.210.814; cc_entrypoint=sdk-cli;\nfirst\n - OS Version: Linux\nsecond",
     ],
+  ]);
+});
+
+test("normalizes the macOS kernel version in Anthropic prompts", () => {
+  expect(extractAnthropic({ system: "Environment\n - OS Version: Darwin 24.6.0" })).toEqual([
+    ["system", "Environment\n - OS Version: Darwin"],
   ]);
 });
 
@@ -148,6 +154,13 @@ test("extracts Gemini system instructions", () => {
 test("routes Codex Desktop requests by originator", () => {
   expect(snapshotForOpenAI("gpt-5.6-sol", "Codex Desktop")).toBe("codex-desktop.md");
   expect(snapshotForOpenAI("capture-model", "codex_exec")).toBe("codex.md");
+});
+
+test("routes Claude Code Desktop requests by user agent entrypoint", () => {
+  expect(snapshotForAnthropic("claude-cli/2.1.280 (external, claude-desktop, agent-sdk/0.3.280)")).toBe("claude-code-desktop.md");
+  expect(snapshotForAnthropic("claude-cli/2.1.280 (external, sdk-cli)")).toBe("claude-code.md");
+  expect(snapshotForAnthropic("claude-cli/2.1.280 (external, claude-desktop-3p)")).toBe("claude-code.md");
+  expect(snapshotForAnthropic(null)).toBe("claude-code.md");
 });
 
 test("routes added harness models to distinct snapshots", () => {

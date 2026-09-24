@@ -7,6 +7,7 @@ const harnesses = {
   agent_zero: ["agent-zero.md", "AGENT_ZERO_VERSION"],
   aider: ["aider.md", "AIDER_VERSION"],
   claude_code: ["claude-code.md", "CLAUDE_CODE_VERSION"],
+  claude_code_desktop: ["claude-code-desktop.md", "CLAUDE_CODE_DESKTOP_VERSION"],
   cline_cli: ["cline-cli.md", "CLINE_CLI_VERSION"],
   cline_sdk: ["cline-sdk.md", "CLINE_SDK_VERSION"],
   codex: ["codex.md", "CODEX_VERSION"],

@@ -713,8 +713,84 @@ jobs:
         if: always()
         run: hdiutil detach "$RUNNER_TEMP/codex-dmg" || true
 
+  capture-claude-code-desktop:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install project dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Download Claude Desktop
+        run: |
+          RELEASE_URL=$(curl --fail --silent --show-error --location --retry 3 \
+            https://downloads.claude.ai/releases/darwin/universal/RELEASES.json \
+            | bun -e 'const feed = await Bun.stdin.json(); console.log(feed.releases.find((release) => release.version === feed.currentRelease).updateTo.url)')
+          curl --fail --location --retry 3 "$RELEASE_URL" --output "$RUNNER_TEMP/Claude.zip"
+          mkdir -p "$RUNNER_TEMP/claude-desktop"
+          ditto -x -k "$RUNNER_TEMP/Claude.zip" "$RUNNER_TEMP/claude-desktop"
+          APP_PATH=$(find "$RUNNER_TEMP/claude-desktop" -maxdepth 1 -type d -name '*.app' -print -quit)
+          test -n "$APP_PATH"
+          echo "CLAUDE_DESKTOP_APP_PATH=$APP_PATH" >> "$GITHUB_ENV"
+
+      - name: Start local capture API
+        run: |
+          bun run capture-api > "$RUNNER_TEMP/capture-api.log" 2>&1 &
+          echo "CAPTURE_API_PID=$!" >> "$GITHUB_ENV"
+          for attempt in {1..20}; do
+            curl --fail --silent http://127.0.0.1:8787/health && exit 0
+            sleep 0.25
+          done
+          cat "$RUNNER_TEMP/capture-api.log"
+          exit 1
+
+      - name: Create clean desktop sandbox
+        run: |
+          mkdir -p "$RUNNER_TEMP/desktop-sandbox"
+          git -C "$RUNNER_TEMP/desktop-sandbox" init --initial-branch=main
+          git -C "$RUNNER_TEMP/desktop-sandbox" config user.name "Harness Capture"
+          git -C "$RUNNER_TEMP/desktop-sandbox" config user.email "harness-capture@localhost"
+
+      - name: Capture Claude Code Desktop instructions
+        env:
+          CAPTURE_WORKSPACE: ${{ runner.temp }}/desktop-sandbox
+          CLAUDE_AGENT_SDK_DIR: ${{ runner.temp }}/claude-agent-sdk
+          CLAUDE_CODE_DESKTOP_CLI_PATH: ${{ runner.temp }}/claude-code-desktop-cli/claude
+        run: bun run capture-claude-code-desktop
+
+      - name: Record Claude Code Desktop version
+        id: version
+        run: |
+          APP_NAME=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' "$CLAUDE_DESKTOP_APP_PATH/Contents/Info.plist")
+          APP_VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$CLAUDE_DESKTOP_APP_PATH/Contents/Info.plist")
+          CLI_VERSION=$("$RUNNER_TEMP/claude-code-desktop-cli/claude" --version)
+          echo "version=$APP_NAME $APP_VERSION (Claude Code ${CLI_VERSION%% *})" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare Claude Code Desktop capture artifact
+        run: |
+          mkdir -p "$RUNNER_TEMP/claude-desktop-captures/prompts"
+          cp prompts/claude-code-desktop.md "$RUNNER_TEMP/claude-desktop-captures/prompts/"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: claude-desktop-captures
+          path: ${{ runner.temp }}/claude-desktop-captures
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Show capture API log on failure
+        if: failure()
+        run: cat "$RUNNER_TEMP/capture-api.log"
+
   publish:
-    needs: [capture-cli, capture-codex-desktop]
+    needs: [capture-cli, capture-codex-desktop, capture-claude-code-desktop]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -742,6 +818,7 @@ jobs:
           CODEX_VERSION: ${{ needs.capture-cli.outputs.codex_version }}
           CODEX_DESKTOP_VERSION: ${{ needs.capture-codex-desktop.outputs.version }}
           CLAUDE_CODE_VERSION: ${{ needs.capture-cli.outputs.claude_code_version }}
+          CLAUDE_CODE_DESKTOP_VERSION: ${{ needs.capture-claude-code-desktop.outputs.version }}
           CLINE_CLI_VERSION: ${{ needs.capture-cli.outputs.cline_cli_version }}
           CLINE_SDK_VERSION: ${{ needs.capture-cli.outputs.cline_sdk_version }}
           CRUSH_VERSION: ${{ needs.capture-cli.outputs.crush_version }}
@@ -769,6 +846,7 @@ jobs:
           test -s prompts/codex.md
           test -s prompts/codex-desktop.md
           test -s prompts/claude-code.md
+          test -s prompts/claude-code-desktop.md
           test -s prompts/cline-cli.md
           test -s prompts/cline-sdk.md
           test -s prompts/gemini-cli.md
