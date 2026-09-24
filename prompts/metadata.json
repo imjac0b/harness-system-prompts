@@ -11,6 +11,10 @@
     "captured": true,
     "version": "2.1.280 (Claude Code)"
   },
+  "claude_code_desktop": {
+    "captured": true,
+    "version": "Claude 2.7032.0 (Claude Code 2.1.280)"
+  },
   "cline_cli": {
     "captured": true,
     "version": "3.0.64"

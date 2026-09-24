@@ -5,6 +5,7 @@ const metadata = {
   agent_zero: { captured: false, version: "unknown" },
   aider: { captured: false, version: "unknown" },
   claude_code: { captured: true, version: "2.1.210 (Claude Code)" },
+  claude_code_desktop: { captured: true, version: "Claude 2.7032.0 (Claude Code 2.1.280)" },
   cline_cli: { captured: false, version: "unknown" },
   cline_sdk: { captured: false, version: "unknown" },
   codex: { captured: true, version: "codex-cli 0.144.4" },
@@ -33,6 +34,7 @@ test("renders linked harness results", () => {
   expect(table).toContain("| Codex CLI | `codex-cli 0.144.4` | ✅ Captured | [View Markdown](prompts/codex.md) |");
   expect(table).toContain("| Codex Desktop | `ChatGPT 26.707.72221 (codex-cli 0.144.2)` | ✅ Captured | [View Markdown](prompts/codex-desktop.md) |");
   expect(table).toContain("| Claude Code | `2.1.210 (Claude Code)` | ✅ Captured | [View Markdown](prompts/claude-code.md) |");
+  expect(table).toContain("| Claude Code Desktop | `Claude 2.7032.0 (Claude Code 2.1.280)` | ✅ Captured | [View Markdown](prompts/claude-code-desktop.md) |");
   expect(table).toContain("| Cline CLI | `unknown` | ⏳ Pending | [View Markdown](prompts/cline-cli.md) |");
   expect(table).toContain("| Cline SDK | `unknown` | ⏳ Pending | [View Markdown](prompts/cline-sdk.md) |");
   expect(table).toContain("| Gemini CLI | `unknown` | ⏳ Pending | [View Markdown](prompts/gemini-cli.md) |");

@@ -8,6 +8,7 @@ Automatically captures and versions system prompts from coding-agent harnesses.
 | Codex CLI | `codex-cli 0.156.0` | ✅ Captured | [View Markdown](prompts/codex.md) |
 | Codex Desktop | `ChatGPT 26.917.61114 (codex-cli 0.155.0-alpha.16)` | ✅ Captured | [View Markdown](prompts/codex-desktop.md) |
 | Claude Code | `2.1.280 (Claude Code)` | ✅ Captured | [View Markdown](prompts/claude-code.md) |
+| Claude Code Desktop | `Claude 2.7032.0 (Claude Code 2.1.280)` | ✅ Captured | [View Markdown](prompts/claude-code-desktop.md) |
 | Cline CLI | `3.0.64` | ✅ Captured | [View Markdown](prompts/cline-cli.md) |
 | Cline SDK | `0.0.85` | ✅ Captured | [View Markdown](prompts/cline-sdk.md) |
 | Gemini CLI | `0.60.0` | ✅ Captured | [View Markdown](prompts/gemini-cli.md) |

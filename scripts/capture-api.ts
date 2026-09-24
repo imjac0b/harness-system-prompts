@@ -61,7 +61,7 @@ export function extractAnthropic(payload: JsonObject): Section[] {
         .filter((field) => field && !field.startsWith("cch="));
       return `x-anthropic-billing-header: ${fields.join("; ")};`;
     })
-    .replace(/^ - OS Version: Linux\s+.+$/m, " - OS Version: Linux");
+    .replace(/^ - OS Version: (Linux|Darwin)\s+.+$/m, " - OS Version: $1");
   return uniqueSections([["system", system]]);
 }
 
@@ -214,6 +214,10 @@ export function snapshotForOpenAI(model: unknown, originator: string | null): st
   return snapshotForModel(model, "codex.md");
 }
 
+export function snapshotForAnthropic(userAgent: string | null): string {
+  return /[(,]\s*claude-desktop\s*[,)]/.test(userAgent ?? "") ? "claude-code-desktop.md" : "claude-code.md";
+}
+
 export async function writeSnapshot(
   filename: string,
   sections: Section[],
@@ -348,7 +352,7 @@ export async function handleRequest(request: Request): Promise<Response> {
   if (url.pathname.endsWith("/messages/count_tokens")) return Response.json({ input_tokens: 1 });
   if (url.pathname.includes(":countTokens")) return Response.json({ totalTokens: 1 });
   if (url.pathname.endsWith("/messages")) {
-    await writeSnapshot("claude-code.md", extractAnthropic(payload));
+    await writeSnapshot(snapshotForAnthropic(request.headers.get("user-agent")), extractAnthropic(payload));
     return anthropicResponse(String(payload.model ?? "capture-model"));
   }
   if (url.pathname.endsWith("/responses")) {
